@@ -1,29 +1,29 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "2f3abc6668e5fbffb901b88a37101e9f335fb07fdaa2f2f34dcc3738e4c81034",
+  "version": "869f2c56ffb5b68c469cf2faded478d93c55df4756723293821340fba063fe45",
   "cutoff": "2026-10-12",
   "validThrough": "2026-10-18",
   "files": {
     "predictor": {
-      "path": "predictor.8a7db38b44b34600debba3a3ff7ccc2050efb576c9120003a61902a676ea11c8.js",
-      "sha256": "8a7db38b44b34600debba3a3ff7ccc2050efb576c9120003a61902a676ea11c8"
+      "path": "predictor.a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659.js",
+      "sha256": "a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659"
     },
     "planner": {
-      "path": "planner.43b120ab27577cb15928d114a155d8a5b7c8aa1af5f3fe57996a470fa93ab253.js",
-      "sha256": "43b120ab27577cb15928d114a155d8a5b7c8aa1af5f3fe57996a470fa93ab253"
+      "path": "planner.e41be232a30f18babe4c187e8d4f4ec57f90eb9d090bb7c1eb0e49f194f3751b.js",
+      "sha256": "e41be232a30f18babe4c187e8d4f4ec57f90eb9d090bb7c1eb0e49f194f3751b"
     },
     "auth": {
-      "path": "auth.14280291ff0b3fadcb4f0b34ed313c77f167ab652cf73f3a6e32e9079e08a2a7.js",
-      "sha256": "14280291ff0b3fadcb4f0b34ed313c77f167ab652cf73f3a6e32e9079e08a2a7"
+      "path": "auth.2f22a73512fba525fd3298ead3ad51391aa5693eed64fa4dc9c8cce59dec7a37.js",
+      "sha256": "2f22a73512fba525fd3298ead3ad51391aa5693eed64fa4dc9c8cce59dec7a37"
     },
     "app": {
-      "path": "app.5a277115586024c9692d054ff8b15a22fecf002bc7cb0890b2679e24ffd07159.js",
-      "sha256": "5a277115586024c9692d054ff8b15a22fecf002bc7cb0890b2679e24ffd07159"
+      "path": "app.addfc205239b550fbc07060e3dd9111d7c61fc35ca05fb3e86c2051ca27bfd76.js",
+      "sha256": "addfc205239b550fbc07060e3dd9111d7c61fc35ca05fb3e86c2051ca27bfd76"
     },
     "style": {
-      "path": "style.616fe4e1e5efbe0042d23a2f18297ebfd126ae5e2eacbc4aeeac994b0da235c6.css",
-      "sha256": "616fe4e1e5efbe0042d23a2f18297ebfd126ae5e2eacbc4aeeac994b0da235c6"
+      "path": "style.2d76b2cc3ba83b61cd3668eb8e6dcae39349084539c4b398a9ed37dd4353f72c.css",
+      "sha256": "2d76b2cc3ba83b61cd3668eb8e6dcae39349084539c4b398a9ed37dd4353f72c"
     },
     "planning": {
       "path": "planning.2ce22424c0def5b01ae40fc9de0cf52f1d533e4537359e09d4f9b3b20b930b7a.json",
@@ -31,5 +31,5 @@
     }
   },
   "shellSha256": "cb1ba90dc5a81783b685ad93edf4702ee3647e73493f18d1c3f239dcb7ee32d3",
-  "bootstrapSha256": "49e3e8d31c9a35b28f11557f9ddb301fcb8657d39784bd281911198a7a31839e"
+  "bootstrapSha256": "083836d53557154bcb4270220f86c542bdc6456c6452f0ab6df172c26cce982f"
 }

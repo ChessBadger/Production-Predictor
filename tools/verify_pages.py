@@ -1,6 +1,12 @@
 """Build and verify only the explicitly approved current-roster derived Pages release."""
 import pathlib,json,hashlib,re,subprocess
 H=lambda b:hashlib.sha256(b).hexdigest()
+# Generated UTF-8 assets have canonical LF bytes before content addressing.
+def asset_bytes(path):
+ return pathlib.Path(path).read_text(encoding='utf8').encode('utf8')
+
+GIT_ATTRIBUTES='* text=auto eol=lf\n/pages_export/** -text\n'
+
 RAW={'TimeIn','TimeOut','FirstName','LastName','Employee','EmployeeProductionHistory','EmployeeProductionExport','employeeDetails','jobs','accepted_candidates','anchors','sourceHash','sourceFile','raw','receipts','token','password','apiKey','supervisorNumber','arrivalLocal','publicationSalt'}
 def inspect_private(s):
  def visit(v):
@@ -74,14 +80,14 @@ def build_public(w,snapshot):
  previous=json.loads((out/'export-allowlist.json').read_text(encoding='utf8')) if (out/'export-allowlist.json').exists() else {'files':[]}
  old={f['path'] for f in previous['files']};actual={p.relative_to(out).as_posix() for p in out.rglob('*') if p.is_file()}
  if actual-old:raise ValueError('Unknown files in pages_export: '+str(actual-old))
- predictor=(src/'predictor.mjs').read_bytes();pn='predictor.'+H(predictor)+'.js';planner=(src/'planner.mjs').read_text(encoding='utf8').replace('./predictor.mjs','./'+pn).encode();en='planner.'+H(planner)+'.js'
+ predictor=asset_bytes(src/'predictor.mjs');pn='predictor.'+H(predictor)+'.js';planner=(src/'planner.mjs').read_text(encoding='utf8').replace('./predictor.mjs','./'+pn).encode();en='planner.'+H(planner)+'.js'
  shell=(src/'index.html').read_text(encoding='utf8');body=shell.split('<body>',1)[1].split('</body>',1)[0]
  app=(src/'app.mjs').read_text(encoding='utf8').replace('./predictor.mjs','./'+pn).replace('./planner.mjs','./'+en).replace('export function start(snapshot,release,session={}){','export function start(snapshot,release,session={}){\ndocument.body.innerHTML='+json.dumps(body)+';').encode()
- content={'predictor':predictor,'planner':planner,'auth':(src/'auth.mjs').read_bytes(),'app':app,'style':(src/'style.css').read_bytes(),'planning':json.dumps(snapshot,ensure_ascii=False,allow_nan=False,separators=(',',':')).encode()}
+ content={'predictor':predictor,'planner':planner,'auth':asset_bytes(src/'auth.mjs'),'app':app,'style':asset_bytes(src/'style.css'),'planning':json.dumps(snapshot,ensure_ascii=False,allow_nan=False,separators=(',',':')).encode()}
  files={role:{'path':role+'.'+H(data)+('.json' if role=='planning' else '.css' if role=='style' else '.js'),'sha256':H(data)} for role,data in content.items()}
  release={'schema':3,'authPolicy':'existing-client-ui-gate-public-data','version':H(json.dumps(files,sort_keys=True,separators=(',',':')).encode()),'cutoff':snapshot['cutoff'],'validThrough':snapshot['validThrough'],'files':files}
  index=b'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://www.gstatic.com https://apis.google.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.firebaseapp.com; script-src 'self' https://www.gstatic.com https://apis.google.com; frame-src https://*.firebaseapp.com https://accounts.google.com; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>Shift Crew Planner</title></head><body><main role="status" aria-live="polite"><h1>Shift Crew Planner</h1><p id="bootStatus">Loading latest shared planning data...</p><button id="retry" type="button" hidden>Retry loading</button></main><script type="module" src="./bootstrap.js?v=3"></script></body></html>'''
- bootstrap=(src/'bootstrap.mjs').read_bytes();release.update(shellSha256=H(index),bootstrapSha256=H(bootstrap));release['version']=H(json.dumps({k:release[k] for k in ['files','shellSha256','bootstrapSha256']},sort_keys=True,separators=(',',':')).encode())
+ bootstrap=asset_bytes(src/'bootstrap.mjs');release.update(shellSha256=H(index),bootstrapSha256=H(bootstrap));release['version']=H(json.dumps({k:release[k] for k in ['files','shellSha256','bootstrapSha256']},sort_keys=True,separators=(',',':')).encode())
  output={'index.html':index,'bootstrap.js':bootstrap,'.nojekyll':b'','release.json':json.dumps(release,indent=2).encode(),**{files[k]['path']:v for k,v in content.items()}}
  for name in old-set(output)-{'export-allowlist.json'}:
   path=out/name
@@ -93,13 +99,14 @@ def build_public(w,snapshot):
 
 def build_clean_repository(w,out):
  repo=w/'pages_repository';previous={p.relative_to(repo/'pages_export').as_posix() for p in (repo/'pages_export').rglob('*') if p.is_file()} if (repo/'pages_export').exists() else set()
- expected={'.github/workflows/pages.yml','tools/verify_pages.py','README.txt','PUBLICATION_HOLD.txt'}|{'pages_export/'+n for n in previous}
+ expected={'.gitattributes','.github/workflows/pages.yml','tools/verify_pages.py','README.txt','PUBLICATION_HOLD.txt'}|{'pages_export/'+n for n in previous}
  actual={p.relative_to(repo).as_posix() for p in repo.rglob('*') if p.is_file() and '.git' not in p.parts} if repo.exists() else set()
  if (repo/'.git').exists():
   verify_repository_root(repo)
   staged=subprocess.run(['git','-C',str(repo),'diff','--cached','--name-only'],capture_output=True,text=True)
   if staged.stdout.strip():raise ValueError('Publishing repository contains staged user work. Build stopped without overwriting it; unstage or preserve that work before rebuilding.')
  if actual-expected:raise ValueError('Unknown publishing files')
+ (repo/'.gitattributes').write_bytes(GIT_ATTRIBUTES.encode('utf8'))
  target=repo/'pages_export';target.mkdir(parents=True,exist_ok=True)
  if previous:
   manifest=json.loads((target/'export-allowlist.json').read_text(encoding='utf8'));declared={f['path'] for f in manifest['files']};assert previous<=declared and all(n.startswith('planning.') for n in declared-previous)
@@ -117,7 +124,7 @@ def verify_repository_root(repo):
  if run.returncode or pathlib.Path(run.stdout.strip()).resolve()!=repo:raise ValueError('Publishing folder inherits another Git repository. Initialize this folder separately and verify its root before staging or changing remotes.')
  if (repo/'EmployeeProductionExport.json').exists() or (repo/'EmployeeProductionExport.xlsx').exists():raise ValueError('This is the private parent Website repository. Use the separate clean pages_repository before staging or publishing.')
  tracked=subprocess.run(['git','-C',str(repo),'ls-files'],capture_output=True,text=True)
- if any(not (name.startswith('pages_export/') or name in ['README.txt','.github/workflows/pages.yml','tools/verify_pages.py']) for name in tracked.stdout.splitlines()):raise ValueError('Publishing repository tracks files outside the reviewed generated scope. Review those files before staging/publishing.')
+ if any(not (name.startswith('pages_export/') or name in ['.gitattributes','README.txt','.github/workflows/pages.yml','tools/verify_pages.py']) for name in tracked.stdout.splitlines()):raise ValueError('Publishing repository tracks files outside the reviewed generated scope. Review those files before staging/publishing.')
  return True
 
 if __name__=='__main__':
