@@ -438,5 +438,77 @@ export async function allocate(snapshot,config,{onProgress=()=>{},cancelled=()=>
  if(!best)throw Error('No feasible assignment satisfies the supervisors, linked/locked groups and required RX roles.');return {...best,exact,evaluated,method:exact?'Exhaustive constrained search':'Greedy multi-seed constrained search (not guaranteed optimal)'};
 }
 
-export function migrateDraft(draft,snapshot){if(!draft)return null;const people=new Map(snapshot.persons.map(p=>[p.stableKey,p.key])),stores=new Map(snapshot.stores.map(s=>[s.stableKey,s.key]));const map=i=>people.get(i);return {...draft,storeKey:stores.get(draft.stableStore)||'',employees:(draft.stableEmployees||[]).map(map).filter(Boolean),roles:{supervisor:map(draft.stableRoles?.supervisor)||'',rx:(draft.stableRoles?.rx||[]).map(map).filter(Boolean),training:(draft.stableRoles?.training||[]).map(map).filter(Boolean),earlyLate:(draft.stableRoles?.earlyLate||[]).map(map).filter(Boolean)},shrink:{...draft.shrink,employeeIds:(draft.stableShrink||[]).map(map).filter(Boolean)},date:draft.date<snapshot.cutoff?snapshot.cutoff:draft.date>snapshot.validThrough?snapshot.validThrough:draft.date};}
-export function persistentDraft(plan,snapshot){const person=id=>snapshot.persons.find(p=>p.key===id)?.stableKey||'',store=snapshot.stores.find(s=>s.key===plan.storeKey);return {...plan,stableStore:store?.stableKey||'',stableEmployees:plan.employees.map(person),stableRoles:Object.fromEntries(Object.entries(plan.roles).map(([k,v])=>[k,Array.isArray(v)?v.map(person):person(v)])),stableShrink:(plan.shrink?.employeeIds||[]).map(person)};}
+export function migrateDraft(draft,snapshot){if(!draft)return null;const people=new Map(snapshot.persons.map(p=>[p.stableKey,p.key])),stores=new Map(snapshot.stores.map(s=>[s.stableKey,s.key]));const map=i=>people.get(i);return {...draft,notes:Object.fromEntries(Object.entries(draft.stableNotes||{}).map(([id,note])=>[map(id),note]).filter(([id])=>id)),storeKey:stores.get(draft.stableStore)||'',employees:(draft.stableEmployees||[]).map(map).filter(Boolean),roles:{supervisor:map(draft.stableRoles?.supervisor)||'',rx:(draft.stableRoles?.rx||[]).map(map).filter(Boolean),training:(draft.stableRoles?.training||[]).map(map).filter(Boolean),earlyLate:(draft.stableRoles?.earlyLate||[]).map(map).filter(Boolean)},shrink:{...draft.shrink,employeeIds:(draft.stableShrink||[]).map(map).filter(Boolean)},date:draft.date<snapshot.cutoff?snapshot.cutoff:draft.date>snapshot.validThrough?snapshot.validThrough:draft.date};}
+export function persistentDraft(plan,snapshot){const person=id=>snapshot.persons.find(p=>p.key===id)?.stableKey||'',store=snapshot.stores.find(s=>s.key===plan.storeKey);return {...plan,stableStore:store?.stableKey||'',stableEmployees:plan.employees.map(person),stableRoles:Object.fromEntries(Object.entries(plan.roles).map(([k,v])=>[k,Array.isArray(v)?v.map(person):person(v)])),stableNotes:Object.fromEntries(Object.entries(plan.notes||{}).map(([id,note])=>[person(id),note])),stableShrink:(plan.shrink?.employeeIds||[]).map(person)};}
+
+const cleanText=value=>String(value||'').trim();
+const splitBulkEmployeeEntries=text=>String(text||'').split(/[\r\n,;]+/).map(cleanText).filter(Boolean);
+export function parseClipboardTable(rawText) {
+  const text = String(rawText || "");
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let idx = 0; idx < text.length; idx += 1) {
+    const char = text[idx];
+    if (char === '"') {
+      if (inQuotes && text[idx + 1] === '"') {
+        cell += '"';
+        idx += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "\t" && !inQuotes) {
+      row.push(cell);
+      cell = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && text[idx + 1] === "\n") idx += 1;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+    cell += char;
+  }
+
+  if (cell.length || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+
+  return rows
+    .map((cells) => cells.map((value) => cleanText(value)))
+    .filter((cells) => cells.some(Boolean));
+}
+
+export function extractBulkEmployeeEntries(rawText) {
+  const rows = parseClipboardTable(rawText);
+  const hasMultipleColumns = rows.some((cells) => cells.length > 1);
+  if (hasMultipleColumns) {
+    return rows
+      .map((cells) => ({
+        name: cleanText(cells[0]),
+        note: cleanText(cells.slice(1).join(" ")),
+      }))
+      .filter((entry) => entry.name);
+  }
+  return splitBulkEmployeeEntries(rawText).map((entry) => ({
+    name: entry,
+    note: "",
+  }));
+}
+
+
+export function parseCrewText(text,people,startTime='06:00'){
+ const entries=extractBulkEmployeeEntries(text),resolved=[],byId=new Map();
+ for(const entry of entries){const query=cleanText(entry.name).replace(/\s+/g,' ').toLowerCase();let matches=people.filter(p=>cleanText(p.name).replace(/\s+/g,' ').toLowerCase()===query);if(!matches.length){const q=query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),boundary=new RegExp('(^|[^a-z0-9])'+q);matches=people.filter(p=>boundary.test(cleanText(p.name).toLowerCase()));if(matches.length!==1){const tokens=query.split(/\s+/),last=(tokens[1]||'').replace(/[^a-z]/g,'');matches=people.filter(p=>{const parts=cleanText(p.name).toLowerCase().split(/\s+/);return parts[0]===tokens[0]&&(!last||parts.at(-1).startsWith(last))})}}if(matches.length!==1)throw Error((matches.length?'Ambiguous':'Unknown')+' employee name: '+entry.name+'. Use the full name.');const id=matches[0].key;if(!id)throw Error('Missing employee name.');let row=byId.get(id);if(!row){row={id,note:'',rx:false,training:false,earlyLate:false};byId.set(id,row);resolved.push(row)}if(entry.note&&!row.note.split(' | ').includes(entry.note))row.note+= (row.note?' | ':'')+entry.note;
+ const note=entry.note.toLowerCase(),minutes=Number(startTime.slice(0,2))*60+Number(startTime.slice(3,5));row.rx ||= /\brx\b/.test(note);row.training ||= /\btrain|\btrainer\b|\bwork\s+(?:with|w\/)\b/.test(note);row.earlyLate ||= /\b(until|unitl|after)\b/.test(note)&&!(/\b(?:until|unitl)\s+noon\b/.test(note)&&minutes<=360);}
+ return resolved;
+}
+export function formatCrewText(ids,notes,people){const quote=s=>/[\t\n\r"]/.test(s)?'"'+s.replaceAll('"','""')+'"':s;return ids.map(id=>quote(people.find(p=>p.key===id)?.name||id)+'\t'+quote(notes[id]||'')).join('\n');}

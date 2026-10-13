@@ -17,7 +17,7 @@ async function load(){
   gate('Loading shared planning data…');const bytes=await checked(release.files.planning);if(!isCurrent())return;
   if((await current()).version!==release.version){location.reload();return}
   const snapshot=JSON.parse(new TextDecoder().decode(bytes));if(snapshot.publicationScope!=='current-roster-derived'||snapshot.persons.some(p=>!p.active))throw Error('Unexpected planning roster.');
-  if(!isCurrent())return;const app=await import('./'+release.files.app.path);if(!isCurrent())return;const ownStop=app.start(snapshot,release,{user,logout:()=>authAgent?.logout()});sessionStop=ownStop;document.documentElement.dataset.release=release.version;return ()=>{ownStop?.();if(sessionStop===ownStop)sessionStop=null};
+  if(!isCurrent())return;const app=await import('./'+release.files.app.path);if(!isCurrent())return;const ownStop=app.start(snapshot,release,{user,isAuthorized:isCurrent,logout:()=>authAgent?.logout()});sessionStop=ownStop;document.documentElement.dataset.release=release.version;return ()=>{ownStop?.();if(sessionStop===ownStop)sessionStop=null};
  }});
  let updating=false;const update=async()=>{if(updating||!navigator.onLine)return;try{if((await current()).version!==release.version){updating=true;location.reload()}}catch{}};setInterval(update,60000);window.addEventListener('focus',update);document.addEventListener('visibilitychange',()=>{if(!document.hidden)update()});
 }

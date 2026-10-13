@@ -1,7 +1,7 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "869f2c56ffb5b68c469cf2faded478d93c55df4756723293821340fba063fe45",
+  "version": "1eb14df17acc3ce0a036788b54fe95ebbee1423d5fff84166ce3f52bf77f423e",
   "cutoff": "2026-10-12",
   "validThrough": "2026-10-18",
   "files": {
@@ -10,26 +10,26 @@
       "sha256": "a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659"
     },
     "planner": {
-      "path": "planner.e41be232a30f18babe4c187e8d4f4ec57f90eb9d090bb7c1eb0e49f194f3751b.js",
-      "sha256": "e41be232a30f18babe4c187e8d4f4ec57f90eb9d090bb7c1eb0e49f194f3751b"
+      "path": "planner.125ccb79f4496522bf38cdd17acb5f2d9e2f1c076d979c9504df53c7d46fd192.js",
+      "sha256": "125ccb79f4496522bf38cdd17acb5f2d9e2f1c076d979c9504df53c7d46fd192"
     },
     "auth": {
-      "path": "auth.2f22a73512fba525fd3298ead3ad51391aa5693eed64fa4dc9c8cce59dec7a37.js",
-      "sha256": "2f22a73512fba525fd3298ead3ad51391aa5693eed64fa4dc9c8cce59dec7a37"
+      "path": "auth.3d512ec12cad1e2808dc90f8322ccab6a19d808f73e4853557e996e27e5bb2c8.js",
+      "sha256": "3d512ec12cad1e2808dc90f8322ccab6a19d808f73e4853557e996e27e5bb2c8"
     },
     "app": {
-      "path": "app.addfc205239b550fbc07060e3dd9111d7c61fc35ca05fb3e86c2051ca27bfd76.js",
-      "sha256": "addfc205239b550fbc07060e3dd9111d7c61fc35ca05fb3e86c2051ca27bfd76"
+      "path": "app.f4d8f712f1827cbb4fb3b390b2539ad1f78f082b87e0096f1d61bfbfc276c092.js",
+      "sha256": "f4d8f712f1827cbb4fb3b390b2539ad1f78f082b87e0096f1d61bfbfc276c092"
     },
     "style": {
-      "path": "style.2d76b2cc3ba83b61cd3668eb8e6dcae39349084539c4b398a9ed37dd4353f72c.css",
-      "sha256": "2d76b2cc3ba83b61cd3668eb8e6dcae39349084539c4b398a9ed37dd4353f72c"
+      "path": "style.2502b15faa9a6ea4087d58474ca4ba8ace9b3f6a744740860f75c49c57a741f4.css",
+      "sha256": "2502b15faa9a6ea4087d58474ca4ba8ace9b3f6a744740860f75c49c57a741f4"
     },
     "planning": {
       "path": "planning.2ce22424c0def5b01ae40fc9de0cf52f1d533e4537359e09d4f9b3b20b930b7a.json",
       "sha256": "2ce22424c0def5b01ae40fc9de0cf52f1d533e4537359e09d4f9b3b20b930b7a"
     }
   },
-  "shellSha256": "cb1ba90dc5a81783b685ad93edf4702ee3647e73493f18d1c3f239dcb7ee32d3",
-  "bootstrapSha256": "083836d53557154bcb4270220f86c542bdc6456c6452f0ab6df172c26cce982f"
+  "shellSha256": "dd60adad0c8659f09371a757a2292cd7fe5f6fa92c82b262237d6d01486268ef",
+  "bootstrapSha256": "e630502561589bb5acb537aaf2f33ca368f24bbd5d1371d2f2d9551c8108881f"
 }
