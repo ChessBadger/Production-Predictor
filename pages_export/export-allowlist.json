@@ -9,7 +9,7 @@
   "exposure": {
     "schema": 2,
     "classification": "APPROVED PUBLIC DERIVED PLANNING DATA",
-    "scope": "Current active roster only; original-reference scenario/diagnostic statistics",
+    "scope": "Current selectable roster; complete latest-visit historical crew display",
     "employeeCount": 60,
     "storeCount": 866,
     "exposed": [
@@ -20,12 +20,12 @@
       "Selected-week scheduled visit dates, times, customer number, address, contact, map and schedule notes",
       "Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries",
       "Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity",
-      "Current members of latest store crew and selected latest-inventory production totals/export hours/recorded clocks when unambiguous",
+      "All recorded members of latest store crew, including former employee display names, and selected latest-inventory production totals/export hours/recorded clocks when unambiguous",
       "Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries",
       "Frozen model trees, thresholds and feature names; cutoff/version/fingerprint"
     ],
     "excluded": [
-      "Former employee identities and selectable former staff",
+      "Selectable former staff and former-employee predictive profiles",
       "Employee numbers and raw export/attendance records",
       "Raw workbooks, bulk historical visits, visit dates and complete timesheet/export rows",
       "Databases, source receipts, archives and backups",
@@ -48,7 +48,7 @@
     },
     {
       "path": "release.json",
-      "sha256": "4bd95a282b3d09ea6f046b5551f45264bcf49489fe6d189bbbff3aa0c3c31065"
+      "sha256": "7b2312902abf7b075ee37027c585c1691059f0e31e888b872b3c752024d441d2"
     },
     {
       "path": "predictor.a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659.js",
@@ -63,16 +63,16 @@
       "sha256": "3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8"
     },
     {
-      "path": "app.f9c4588821cb7bc50dfc9d0cb0688d1d251bf03c2496416ae830de1262c08b5c.js",
-      "sha256": "f9c4588821cb7bc50dfc9d0cb0688d1d251bf03c2496416ae830de1262c08b5c"
+      "path": "app.7aac31e7b0b910887c7f8c14b2a930ce4ff4ca48c03056da472b296101d06043.js",
+      "sha256": "7aac31e7b0b910887c7f8c14b2a930ce4ff4ca48c03056da472b296101d06043"
     },
     {
       "path": "style.3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc.css",
       "sha256": "3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc"
     },
     {
-      "path": "planning.5231c98f3569cf60fdef63ccced2ed3a89fa9e59e9d18e6b2e41d3ac818e0cd5.json",
-      "sha256": "5231c98f3569cf60fdef63ccced2ed3a89fa9e59e9d18e6b2e41d3ac818e0cd5"
+      "path": "planning.242c8f74989e0b1cf83ccf4a2a2a2f740f7abe5ce706b963fc81b10375c4978f.json",
+      "sha256": "242c8f74989e0b1cf83ccf4a2a2a2f740f7abe5ce706b963fc81b10375c4978f"
     },
     {
       "path": "export-allowlist.json",
