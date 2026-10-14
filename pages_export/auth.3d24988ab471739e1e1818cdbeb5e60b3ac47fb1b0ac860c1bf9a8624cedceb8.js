@@ -19,26 +19,27 @@ const ALLOWED_USERS = [
 ];
 // This reproduces the original interface gate. It does NOT authorize static data files.
 export function createGate({allowed,onOpen,onClose,onError,signOut,now=()=>Date.now(),setTimer=setTimeout,clearTimer=clearTimeout}){
- let generation=0,validation=0,timer=null,stop=null,current=null,lastDenial='',expiresAt=0;
- function close(message='Please sign in to continue'){generation++;validation++;clearTimer(timer);if(stop){stop();stop=null}current=null;expiresAt=0;onClose(message)}
- async function userChanged(user){
+ let generation=0,validation=0,timer=null,refreshTimer=null,stop=null,current=null,lastDenial='',expiresAt=0;
+ function close(message='Please sign in to continue'){generation++;validation++;clearTimer(timer);clearTimer(refreshTimer);if(stop){stop();stop=null}current=null;expiresAt=0;onClose(message)}
+ async function userChanged(user,forceRefresh=false){
   const email=String(user?.email||'').toLowerCase(),same=!!current&&!!user&&current.uid===user.uid&&String(current.email||'').toLowerCase()===email;
   if(!same)close(!user&&lastDenial?lastDenial:'Please sign in to continue');
   const token=generation,check=++validation;if(!user)return;
   if(!allowed.includes(email)){lastDenial='Unauthorized access. Please contact an administrator.';close(lastDenial);await signOut().catch(()=>{});return}
   try{
-   const result=await user.getIdTokenResult(),expires=Date.parse(result.expirationTime);
+   const result=await user.getIdTokenResult(forceRefresh),expires=Date.parse(result.expirationTime);
    if(token!==generation||check!==validation)return;
    if(!Number.isFinite(expires)||expires<=now())throw Error('Session expired. Reconnect to restore your sign-in.');
-   lastDenial='';expiresAt=expires;clearTimer(timer);
+   lastDenial='';expiresAt=expires;clearTimer(timer);clearTimer(refreshTimer);
+   refreshTimer=setTimer(()=>userChanged(user,true),Math.max(1000,(expires-now())-Math.min(300000,(expires-now())/2)));
    timer=setTimer(()=>{lastDenial='Session expired. Reconnect to restore your sign-in.';close(lastDenial)},Math.max(0,expires-now()));
    // Firebase refreshes tokens automatically. A refresh must not rebuild the user's plan.
    if(same)return;
    current=user;const cleanup=await onOpen(user,()=>token===generation&&now()<expiresAt);
    if(token!==generation){cleanup?.();return}stop=cleanup;
-  }catch(error){if(token===generation&&check===validation){if(same&&now()<expiresAt&&error.code==='auth/network-request-failed')return;lastDenial=error.message||'Sign-in could not be verified.';close(lastDenial);onError(error)}}
+  }catch(error){if(token===generation&&check===validation){if(same&&now()<expiresAt&&error.code==='auth/network-request-failed'){clearTimer(refreshTimer);refreshTimer=setTimer(()=>userChanged(user,true),Math.max(1000,Math.min(30000,(expiresAt-now())/2)));return;}lastDenial=error.message||'Sign-in could not be verified.';close(lastDenial);onError(error)}}
  }
- return {userChanged,close,logout:async()=>{lastDenial='';close('Signed out.');await signOut().catch(()=>{})},stop:()=>{generation++;validation++;clearTimer(timer);stop?.();stop=null;current=null}};
+ return {userChanged,close,logout:async()=>{lastDenial='';close('Signed out.');await signOut().catch(()=>{})},stop:()=>{generation++;validation++;clearTimer(timer);clearTimer(refreshTimer);stop?.();stop=null;current=null}};
 }
 export async function connectAuth({onOpen,onClose,onError}){
  const load=src=>new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(Error('Google sign-in could not load. Check your connection.'));document.head.append(script)});

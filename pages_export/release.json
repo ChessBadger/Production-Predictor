@@ -1,7 +1,7 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "a36ad83f466bbdf9c092ec71c74bec83c52b5f0358645ecd51eef96be9fefbe2",
+  "version": "cc739d743174c348a639fd5deeff5d81811cc85f7d6f48f33fe15e918e5ed005",
   "cutoff": "2026-10-12",
   "validThrough": "2026-10-18",
   "files": {
@@ -14,22 +14,22 @@
       "sha256": "df11db64fcf4cd2f6d24e18d7d766d7b887a817d6f340e025b28f05272375143"
     },
     "auth": {
-      "path": "auth.c7def1048c4e1ab8fdb9b4d9d0f390838073efe6ec6fb5dee30683bc17c3f1a7.js",
-      "sha256": "c7def1048c4e1ab8fdb9b4d9d0f390838073efe6ec6fb5dee30683bc17c3f1a7"
+      "path": "auth.3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8.js",
+      "sha256": "3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8"
     },
     "app": {
-      "path": "app.3e331253a5899e35c8166e99d1b686d0d37ed6cde53ae56c7e00ef8bb6f24fce.js",
-      "sha256": "3e331253a5899e35c8166e99d1b686d0d37ed6cde53ae56c7e00ef8bb6f24fce"
+      "path": "app.f9c4588821cb7bc50dfc9d0cb0688d1d251bf03c2496416ae830de1262c08b5c.js",
+      "sha256": "f9c4588821cb7bc50dfc9d0cb0688d1d251bf03c2496416ae830de1262c08b5c"
     },
     "style": {
-      "path": "style.250ad7d4398468edadea0395fd582e423fc7beb66a94a17931afe1c1a6802c6f.css",
-      "sha256": "250ad7d4398468edadea0395fd582e423fc7beb66a94a17931afe1c1a6802c6f"
+      "path": "style.3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc.css",
+      "sha256": "3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc"
     },
     "planning": {
       "path": "planning.5231c98f3569cf60fdef63ccced2ed3a89fa9e59e9d18e6b2e41d3ac818e0cd5.json",
       "sha256": "5231c98f3569cf60fdef63ccced2ed3a89fa9e59e9d18e6b2e41d3ac818e0cd5"
     }
   },
-  "shellSha256": "7b952ca4004f58366903d758d1ba4ee31cd0f49ceac0fd14ed23e4910705227e",
-  "bootstrapSha256": "dc7eab44452fd56f6cf399ebe20761948927fd5751c57d01768271e3a87c945b"
+  "shellSha256": "611ba252d15a8a9a44ad26444ec88c6b9c63d0725c6ffbb2470f8bfb5cf0a9a6",
+  "bootstrapSha256": "2b0f1bbb5f99fb8fb541c6cc4f23572c0e3c05f6ce31797040f386428dd9eae3"
 }
