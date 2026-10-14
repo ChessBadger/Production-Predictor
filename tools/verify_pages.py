@@ -16,7 +16,7 @@ def inspect_private(s):
   elif isinstance(v,list):
    for x in v:visit(x)
  visit(s)
- return {'schema':2,'classification':'APPROVED PUBLIC DERIVED PLANNING DATA','scope':'Current active roster only; original-reference scenario/diagnostic statistics','employeeCount':len(s['persons']),'storeCount':len(s['stores']),'exposed':['Current employee display names and opaque package keys','Current employee speed, evidence, recent weekly hours and residual summaries','Role-conditioned account productivity, participation and experience for current employees','Supported account/store display choices and opaque account keys','Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries','Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity','Current members of latest store crew for Use Last Crew','Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries','Frozen model trees, thresholds and feature names; cutoff/version/fingerprint'],'excluded':['Former employee identities and selectable former staff','Employee numbers and raw export/attendance records','Raw workbooks, visit clocks, quantities, dates and timesheet rows','Databases, source receipts, archives and backups','Local paths, credentials, tokens and source file hashes'],'warning':'Anyone with the site URL can inspect the approved names and derived planning coefficients. This is not access-controlled data.'}
+ return {'schema':2,'classification':'APPROVED PUBLIC DERIVED PLANNING DATA','scope':'Current active roster only; original-reference scenario/diagnostic statistics','employeeCount':len(s['persons']),'storeCount':len(s['stores']),'exposed':['Current employee display names and opaque package keys','Current employee speed, evidence, recent weekly hours and residual summaries','Role-conditioned account productivity, participation and experience for current employees','Supported account/store display choices and opaque account keys','Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries','Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity','Current members of latest store crew and selected latest-inventory production totals/export hours/recorded clocks when unambiguous','Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries','Frozen model trees, thresholds and feature names; cutoff/version/fingerprint'],'excluded':['Former employee identities and selectable former staff','Employee numbers and raw export/attendance records','Raw workbooks, bulk historical visits, visit dates and complete timesheet/export rows','Databases, source receipts, archives and backups','Local paths, credentials, tokens and source file hashes'],'warning':'Anyone with the site URL can inspect the approved names and derived planning coefficients. This is not access-controlled data.'}
 
 def verify_planning(s):
  inspect_private(s)
@@ -32,7 +32,15 @@ def verify_planning(s):
   if set(r)!=ids:raise ValueError('Historical person leaked into incumbent rates')
  for store in s['stores']:
   if set(store)!={'key','name','context','lastCrew','stableKey','scenario','needsRx'} or not store['scenario']['variants']['default']:raise ValueError('Unexpected store fields')
+  for j in store['scenario'].get('scheduleJobs',[]):
+   if set(j)!={'key','date','startTime','typeOfInv','plannedDurationHours','plannedCrewSize'} or not s['cutoff']<=j['date']<=s['validThrough'] or (j['startTime'] and not re.fullmatch(r'\d{2}:\d{2}',j['startTime'])):raise ValueError('Unexpected scheduled-job fields or date')
   last=store['lastCrew']
+  for row in last.get('rows',[]):
+   if row.get('support') not in ['recorded','missing','ambiguous','unconfirmed']:raise ValueError('Unexpected curated last-crew support label')
+   if set(row)!={'key','piecesPerHr','inStoreHours','pieces','recordedIn','recordedOut','support'} or row['key'] not in ids or row['key'] not in last['employees']:raise ValueError('Unexpected last-crew fields or identity')
+   for field in ['recordedIn','recordedOut']:
+    if row[field] is not None and not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?',row[field]):raise ValueError('Invalid recorded clock')
+
   if not set(last['employees'])<=ids or (last['supervisor'] and last['supervisor'] not in last['employees']) or not set(last['rx'])<=set(last['employees']):raise ValueError('Invalid current last crew')
   for k in (store['context']['incumbent']['kernels'] if store['context'] else []):
    for f in ['full','counter']:
@@ -40,6 +48,8 @@ def verify_planning(s):
  for store in s['stores']:
   for pack in store['scenario']['variants'].values():
    if not pack:continue
+   if any(set(v)!=ids for v in pack.get('supervisorEstimates',{}).values()):raise ValueError('Historical supervisor identity leaked')
+   if any(len(e)!=4 or not 0<=e[0]<=1 or not isinstance(e[1],int) or e[1]<0 or not isinstance(e[2],str) or not isinstance(e[3],bool) for v in pack.get('supervisorEstimates',{}).values() for e in v.values()):raise ValueError('Invalid supervisor coefficient')
    if pack['rates'] not in s['scenarioRates'] or pack['recentRates'] not in s['scenarioRates']:raise ValueError('Missing scenario rates')
    for kernel in pack['kernels']:
     if 'ageDays' in kernel or 'date' in kernel:raise ValueError('Unnecessary historical visit date exposed')
@@ -55,6 +65,7 @@ def verify_public(out):
  actual={p.relative_to(out).as_posix() for p in out.rglob('*') if p.is_file()}
  if actual!=expected or {x['path'] for x in m['files']}!=expected:raise ValueError('Public file list differs from exact release allowlist')
  if release.get('schema')!=3 or release.get('authPolicy')!='existing-client-ui-gate-public-data':raise ValueError('Unexpected login/public-data policy')
+ if m.get('rawCompanyDataIncluded') is not False:raise ValueError('Raw company-data release is not authorized')
  if m.get('containsPersonalData') is not True or m.get('containsModelWeights') is not True:raise ValueError('Approved exposure declaration mismatch')
  for f in m['files']:
   if 'sha256' in f and H((out/f['path']).read_bytes())!=f['sha256']:raise ValueError('Artifact hash mismatch '+f['path'])
@@ -94,7 +105,7 @@ def build_public(w,snapshot):
   if path.parent!=out:raise ValueError('Unsafe old artifact path')
   path.unlink()
  for n,data in output.items():(out/n).write_bytes(data)
- manifest={'schema':3,'authPolicy':'Existing Firebase/Google + client email UI gate; static planning data and UI allowlist remain public','classification':'APPROVED PUBLIC CURRENT-ROSTER DERIVED PLANNING DATA','containsPersonalData':True,'containsModelWeights':True,'rawCompanyDataIncluded':False,'exposure':inspect_private(snapshot),'files':[{'path':n,'sha256':H(data)} for n,data in output.items()]+[{'path':'export-allowlist.json','purpose':'Exact release allowlist and exposure inventory'}]}
+ manifest={'schema':3,'authPolicy':'Existing Firebase/Google + client email UI gate; static planning data and UI allowlist remain public','classification':'APPROVED PUBLIC CURRENT-ROSTER DERIVED PLANNING DATA','containsPersonalData':True,'containsModelWeights':True,'rawCompanyDataIncluded':False,'selectedLastCrewHistoricalValuesIncluded':any(st.get('lastCrew',{}).get('rows') for st in snapshot['stores']),'exposure':inspect_private(snapshot),'files':[{'path':n,'sha256':H(data)} for n,data in output.items()]+[{'path':'export-allowlist.json','purpose':'Exact release allowlist and exposure inventory'}]}
  (out/'export-allowlist.json').write_text(json.dumps(manifest,indent=2),encoding='utf8');verify_public(out);build_clean_repository(w,out);return release
 
 def build_clean_repository(w,out):

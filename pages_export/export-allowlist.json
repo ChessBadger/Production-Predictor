@@ -5,6 +5,7 @@
   "containsPersonalData": true,
   "containsModelWeights": true,
   "rawCompanyDataIncluded": false,
+  "selectedLastCrewHistoricalValuesIncluded": true,
   "exposure": {
     "schema": 2,
     "classification": "APPROVED PUBLIC DERIVED PLANNING DATA",
@@ -18,14 +19,14 @@
       "Supported account/store display choices and opaque account keys",
       "Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries",
       "Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity",
-      "Current members of latest store crew for Use Last Crew",
+      "Current members of latest store crew and selected latest-inventory production totals/export hours/recorded clocks when unambiguous",
       "Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries",
       "Frozen model trees, thresholds and feature names; cutoff/version/fingerprint"
     ],
     "excluded": [
       "Former employee identities and selectable former staff",
       "Employee numbers and raw export/attendance records",
-      "Raw workbooks, visit clocks, quantities, dates and timesheet rows",
+      "Raw workbooks, bulk historical visits, visit dates and complete timesheet/export rows",
       "Databases, source receipts, archives and backups",
       "Local paths, credentials, tokens and source file hashes"
     ],
@@ -46,31 +47,31 @@
     },
     {
       "path": "release.json",
-      "sha256": "09b260f47bd1259145303821dbed5776adcfccbe4f496348b5c8d3192acefa03"
+      "sha256": "a163e2f0f841427bb9b1b261fe418a6caf1b7fe44a729ed0bfca6a51bf9fd20c"
     },
     {
       "path": "predictor.a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659.js",
       "sha256": "a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659"
     },
     {
-      "path": "planner.e9a6d07b5b472ddebeffae68fbfe861af528b5769c367150e7f3dfdca5b77398.js",
-      "sha256": "e9a6d07b5b472ddebeffae68fbfe861af528b5769c367150e7f3dfdca5b77398"
+      "path": "planner.d52b7b63c70e08b8eefad957379e6f9bb4832326401fc8966b856385c2124dd4.js",
+      "sha256": "d52b7b63c70e08b8eefad957379e6f9bb4832326401fc8966b856385c2124dd4"
     },
     {
       "path": "auth.3d512ec12cad1e2808dc90f8322ccab6a19d808f73e4853557e996e27e5bb2c8.js",
       "sha256": "3d512ec12cad1e2808dc90f8322ccab6a19d808f73e4853557e996e27e5bb2c8"
     },
     {
-      "path": "app.49e96f278758f48d0e822a0de3482bce21548e98d173074de50f6a1e7e91562a.js",
-      "sha256": "49e96f278758f48d0e822a0de3482bce21548e98d173074de50f6a1e7e91562a"
+      "path": "app.992ba2684715db39a4e79d8f568d990d6fc64012de4a7539ac0591aafe6d9ffc.js",
+      "sha256": "992ba2684715db39a4e79d8f568d990d6fc64012de4a7539ac0591aafe6d9ffc"
     },
     {
-      "path": "style.1bc732a1a82890a91da953c3a1bba20346f722e6933f401cb1d14686837cac09.css",
-      "sha256": "1bc732a1a82890a91da953c3a1bba20346f722e6933f401cb1d14686837cac09"
+      "path": "style.3130a18a464d71cdece3708f822ecdc88c05ceae0af3700a2a474f86621081d7.css",
+      "sha256": "3130a18a464d71cdece3708f822ecdc88c05ceae0af3700a2a474f86621081d7"
     },
     {
-      "path": "planning.2ce22424c0def5b01ae40fc9de0cf52f1d533e4537359e09d4f9b3b20b930b7a.json",
-      "sha256": "2ce22424c0def5b01ae40fc9de0cf52f1d533e4537359e09d4f9b3b20b930b7a"
+      "path": "planning.bc3a9237de2159a4ec9e27dafc61709c4cec1d110f923f3135e302793868977e.json",
+      "sha256": "bc3a9237de2159a4ec9e27dafc61709c4cec1d110f923f3135e302793868977e"
     },
     {
       "path": "export-allowlist.json",
