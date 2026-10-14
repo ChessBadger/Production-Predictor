@@ -10,13 +10,14 @@
     "schema": 2,
     "classification": "APPROVED PUBLIC DERIVED PLANNING DATA",
     "scope": "Current active roster only; original-reference scenario/diagnostic statistics",
-    "employeeCount": 61,
-    "storeCount": 856,
+    "employeeCount": 60,
+    "storeCount": 866,
     "exposed": [
       "Current employee display names and opaque package keys",
       "Current employee speed, evidence, recent weekly hours and residual summaries",
       "Role-conditioned account productivity, participation and experience for current employees",
       "Supported account/store display choices and opaque account keys",
+      "Selected-week scheduled visit dates, times, customer number, address, contact, map and schedule notes",
       "Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries",
       "Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity",
       "Current members of latest store crew and selected latest-inventory production totals/export hours/recorded clocks when unambiguous",
@@ -35,11 +36,11 @@
   "files": [
     {
       "path": "index.html",
-      "sha256": "dd60adad0c8659f09371a757a2292cd7fe5f6fa92c82b262237d6d01486268ef"
+      "sha256": "7b952ca4004f58366903d758d1ba4ee31cd0f49ceac0fd14ed23e4910705227e"
     },
     {
       "path": "bootstrap.js",
-      "sha256": "e630502561589bb5acb537aaf2f33ca368f24bbd5d1371d2f2d9551c8108881f"
+      "sha256": "dc7eab44452fd56f6cf399ebe20761948927fd5751c57d01768271e3a87c945b"
     },
     {
       "path": ".nojekyll",
@@ -47,31 +48,31 @@
     },
     {
       "path": "release.json",
-      "sha256": "a163e2f0f841427bb9b1b261fe418a6caf1b7fe44a729ed0bfca6a51bf9fd20c"
+      "sha256": "1cafcf165338cca04700ea43485f440f0c8779a39ac717e0da966a8192b55a26"
     },
     {
       "path": "predictor.a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659.js",
       "sha256": "a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659"
     },
     {
-      "path": "planner.d52b7b63c70e08b8eefad957379e6f9bb4832326401fc8966b856385c2124dd4.js",
-      "sha256": "d52b7b63c70e08b8eefad957379e6f9bb4832326401fc8966b856385c2124dd4"
+      "path": "planner.df11db64fcf4cd2f6d24e18d7d766d7b887a817d6f340e025b28f05272375143.js",
+      "sha256": "df11db64fcf4cd2f6d24e18d7d766d7b887a817d6f340e025b28f05272375143"
     },
     {
-      "path": "auth.3d512ec12cad1e2808dc90f8322ccab6a19d808f73e4853557e996e27e5bb2c8.js",
-      "sha256": "3d512ec12cad1e2808dc90f8322ccab6a19d808f73e4853557e996e27e5bb2c8"
+      "path": "auth.c7def1048c4e1ab8fdb9b4d9d0f390838073efe6ec6fb5dee30683bc17c3f1a7.js",
+      "sha256": "c7def1048c4e1ab8fdb9b4d9d0f390838073efe6ec6fb5dee30683bc17c3f1a7"
     },
     {
-      "path": "app.992ba2684715db39a4e79d8f568d990d6fc64012de4a7539ac0591aafe6d9ffc.js",
-      "sha256": "992ba2684715db39a4e79d8f568d990d6fc64012de4a7539ac0591aafe6d9ffc"
+      "path": "app.3e331253a5899e35c8166e99d1b686d0d37ed6cde53ae56c7e00ef8bb6f24fce.js",
+      "sha256": "3e331253a5899e35c8166e99d1b686d0d37ed6cde53ae56c7e00ef8bb6f24fce"
     },
     {
-      "path": "style.3130a18a464d71cdece3708f822ecdc88c05ceae0af3700a2a474f86621081d7.css",
-      "sha256": "3130a18a464d71cdece3708f822ecdc88c05ceae0af3700a2a474f86621081d7"
+      "path": "style.250ad7d4398468edadea0395fd582e423fc7beb66a94a17931afe1c1a6802c6f.css",
+      "sha256": "250ad7d4398468edadea0395fd582e423fc7beb66a94a17931afe1c1a6802c6f"
     },
     {
-      "path": "planning.bc3a9237de2159a4ec9e27dafc61709c4cec1d110f923f3135e302793868977e.json",
-      "sha256": "bc3a9237de2159a4ec9e27dafc61709c4cec1d110f923f3135e302793868977e"
+      "path": "planning.5231c98f3569cf60fdef63ccced2ed3a89fa9e59e9d18e6b2e41d3ac818e0cd5.json",
+      "sha256": "5231c98f3569cf60fdef63ccced2ed3a89fa9e59e9d18e6b2e41d3ac818e0cd5"
     },
     {
       "path": "export-allowlist.json",

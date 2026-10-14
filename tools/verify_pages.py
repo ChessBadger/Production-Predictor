@@ -1,5 +1,5 @@
 """Build and verify only the explicitly approved current-roster derived Pages release."""
-import pathlib,json,hashlib,re,subprocess
+import pathlib,json,hashlib,re,subprocess,math
 H=lambda b:hashlib.sha256(b).hexdigest()
 # Generated UTF-8 assets have canonical LF bytes before content addressing.
 def asset_bytes(path):
@@ -16,7 +16,7 @@ def inspect_private(s):
   elif isinstance(v,list):
    for x in v:visit(x)
  visit(s)
- return {'schema':2,'classification':'APPROVED PUBLIC DERIVED PLANNING DATA','scope':'Current active roster only; original-reference scenario/diagnostic statistics','employeeCount':len(s['persons']),'storeCount':len(s['stores']),'exposed':['Current employee display names and opaque package keys','Current employee speed, evidence, recent weekly hours and residual summaries','Role-conditioned account productivity, participation and experience for current employees','Supported account/store display choices and opaque account keys','Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries','Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity','Current members of latest store crew and selected latest-inventory production totals/export hours/recorded clocks when unambiguous','Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries','Frozen model trees, thresholds and feature names; cutoff/version/fingerprint'],'excluded':['Former employee identities and selectable former staff','Employee numbers and raw export/attendance records','Raw workbooks, bulk historical visits, visit dates and complete timesheet/export rows','Databases, source receipts, archives and backups','Local paths, credentials, tokens and source file hashes'],'warning':'Anyone with the site URL can inspect the approved names and derived planning coefficients. This is not access-controlled data.'}
+ return {'schema':2,'classification':'APPROVED PUBLIC DERIVED PLANNING DATA','scope':'Current active roster only; original-reference scenario/diagnostic statistics','employeeCount':len(s['persons']),'storeCount':len(s['stores']),'exposed':['Current employee display names and opaque package keys','Current employee speed, evidence, recent weekly hours and residual summaries','Role-conditioned account productivity, participation and experience for current employees','Supported account/store display choices and opaque account keys','Selected-week scheduled visit dates, times, customer number, address, contact, map and schedule notes','Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries','Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity','Current members of latest store crew and selected latest-inventory production totals/export hours/recorded clocks when unambiguous','Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries','Frozen model trees, thresholds and feature names; cutoff/version/fingerprint'],'excluded':['Former employee identities and selectable former staff','Employee numbers and raw export/attendance records','Raw workbooks, bulk historical visits, visit dates and complete timesheet/export rows','Databases, source receipts, archives and backups','Local paths, credentials, tokens and source file hashes'],'warning':'Anyone with the site URL can inspect the approved names and derived planning coefficients. This is not access-controlled data.'}
 
 def verify_planning(s):
  inspect_private(s)
@@ -33,19 +33,25 @@ def verify_planning(s):
  for store in s['stores']:
   if set(store)!={'key','name','context','lastCrew','stableKey','scenario','needsRx'} or not store['scenario']['variants']['default']:raise ValueError('Unexpected store fields')
   for j in store['scenario'].get('scheduleJobs',[]):
-   if set(j)!={'key','date','startTime','typeOfInv','plannedDurationHours','plannedCrewSize'} or not s['cutoff']<=j['date']<=s['validThrough'] or (j['startTime'] and not re.fullmatch(r'\d{2}:\d{2}',j['startTime'])):raise ValueError('Unexpected scheduled-job fields or date')
+   if set(j)!={'key','date','startTime','typeOfInv','plannedDurationHours','plannedCrewSize','details'} or not s['cutoff']<=j['date']<=s['validThrough'] or (j['startTime'] and not re.fullmatch(r'\d{2}:\d{2}',j['startTime'])):raise ValueError('Unexpected scheduled-job fields or date')
+   if set(j['details'])!={'customerNumber','address','city','stateCode','zipcode','phone','mapLink','dateScheduled','storeNotes','notes','runName','meetTimeText'} or any(not isinstance(v,str) for v in j['details'].values()):raise ValueError('Unexpected schedule details')
   last=store['lastCrew']
+  if set(last)-{'employees','supervisor','supervisorStatus','rx','rows'}:raise ValueError('Unexpected last-crew metadata')
+  if last.get('supervisorStatus','recorded' if last['supervisor'] else 'missing') not in ['recorded','not-current','missing']:raise ValueError('Invalid last-crew supervisor status')
+  if 'supervisorStatus' in last and (last['supervisorStatus']=='recorded')!=bool(last['supervisor']):raise ValueError('Inconsistent last-crew supervisor status')
   for row in last.get('rows',[]):
    if row.get('support') not in ['recorded','missing','ambiguous','unconfirmed']:raise ValueError('Unexpected curated last-crew support label')
    if set(row)!={'key','piecesPerHr','inStoreHours','pieces','recordedIn','recordedOut','support'} or row['key'] not in ids or row['key'] not in last['employees']:raise ValueError('Unexpected last-crew fields or identity')
    for field in ['recordedIn','recordedOut']:
     if row[field] is not None and not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?',row[field]):raise ValueError('Invalid recorded clock')
 
-  if not set(last['employees'])<=ids or (last['supervisor'] and last['supervisor'] not in last['employees']) or not set(last['rx'])<=set(last['employees']):raise ValueError('Invalid current last crew')
+  if not set(last['employees'])<=ids or (last['supervisor'] and last['supervisor'] not in ids) or not set(last['rx'])<=set(last['employees']):raise ValueError('Invalid current last crew')
   for k in (store['context']['incumbent']['kernels'] if store['context'] else []):
    for f in ['full','counter']:
     if not set(k[f]['members'])<=ids:raise ValueError('Former employee reference leaked')
  for store in s['stores']:
+  recent=store['scenario'].get('recentAccountProduction',{})
+  if set(recent)!=ids or any(v is not None and (not isinstance(v,(int,float)) or not math.isfinite(v) or v<=0) for v in recent.values()):raise ValueError('Invalid recent account production')
   for pack in store['scenario']['variants'].values():
    if not pack:continue
    if any(set(v)!=ids for v in pack.get('supervisorEstimates',{}).values()):raise ValueError('Historical supervisor identity leaked')
@@ -106,7 +112,7 @@ def build_public(w,snapshot):
   path.unlink()
  for n,data in output.items():(out/n).write_bytes(data)
  manifest={'schema':3,'authPolicy':'Existing Firebase/Google + client email UI gate; static planning data and UI allowlist remain public','classification':'APPROVED PUBLIC CURRENT-ROSTER DERIVED PLANNING DATA','containsPersonalData':True,'containsModelWeights':True,'rawCompanyDataIncluded':False,'selectedLastCrewHistoricalValuesIncluded':any(st.get('lastCrew',{}).get('rows') for st in snapshot['stores']),'exposure':inspect_private(snapshot),'files':[{'path':n,'sha256':H(data)} for n,data in output.items()]+[{'path':'export-allowlist.json','purpose':'Exact release allowlist and exposure inventory'}]}
- (out/'export-allowlist.json').write_text(json.dumps(manifest,indent=2),encoding='utf8');verify_public(out);build_clean_repository(w,out);return release
+ (out/'export-allowlist.json').write_text(json.dumps(manifest,indent=2),encoding='utf8',newline='\n');verify_public(out);build_clean_repository(w,out);return release
 
 def build_clean_repository(w,out):
  repo=w/'pages_repository';previous={p.relative_to(repo/'pages_export').as_posix() for p in (repo/'pages_export').rglob('*') if p.is_file()} if (repo/'pages_export').exists() else set()

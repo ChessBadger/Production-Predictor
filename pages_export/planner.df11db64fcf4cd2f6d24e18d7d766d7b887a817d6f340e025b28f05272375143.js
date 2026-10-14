@@ -1,6 +1,6 @@
 import {predict} from './predictor.a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659.js';
 
-const {solveAvailability,workerAvailability}=(()=>{
+export const {solveAvailability,workerAvailability}=(()=>{
 
 // Pure clock availability. Productivity and time present remain separate factors.
 
@@ -70,11 +70,11 @@ function solveAvailability(plan,predict){
 
  const unresolved=!/^\d{2}:\d{2}$/.test(plan.startTime||'')?(plan.employees||[]).filter(id=>clockNote(plan.notes?.[id])):[];
 
- if(unresolved.length){const applied={...plan,roles:{...plan.roles,earlyLate:(plan.roles?.earlyLate||[]).filter(id=>(plan.modes?.earlyLate||'p50')!=='p50'||!unresolved.includes(id))}},initial=predict(applied);return {...initial,availabilityUnresolvedIds:unresolved,effectiveCountingHours:null,crew:initial.crew.map(p=>unresolved.includes(p.id)?{...p,availabilityUnknown:true,predictedPieces:null}:p),warnings:[...(initial.warnings||[]),'Clock notes need a matching ScheduleFinalFull start; timed availability is not applied.']};}
+ if(unresolved.length){const applied={...plan,roles:{...plan.roles,earlyLate:(plan.roles?.earlyLate||[]).filter(id=>!['auto','p50'].includes(plan.modes?.earlyLate||'p50')||!unresolved.includes(id))}},initial=predict(applied);return {...initial,availabilityUnresolvedIds:unresolved,effectiveCountingHours:null,crew:initial.crew.map(p=>unresolved.includes(p.id)?{...p,availabilityUnknown:true,predictedPieces:null}:p),warnings:[...(initial.warnings||[]),'Clock notes need a matching ScheduleFinalFull start; timed availability is not applied.']};}
 
  const initial=predict(plan);let entries=availabilityForPlan(plan,initial.displayHours);if(!Object.keys(entries).length)return initial;
 
- const evaluate=hours=>{const e=availabilityForPlan(plan,hours),f=Object.fromEntries(Object.entries(e).map(([id,a])=>[id,a.factor]));if(plan.employees.every(id=>f[id]===0))return {result:{displayHours:19},entries:e};return {result:predict({...plan,availabilityFactors:f}),entries:e};};
+ const evaluate=hours=>{const e=availabilityForPlan(plan,hours),f=Object.fromEntries(Object.entries(e).map(([id,a])=>[id,a.factor]));if(!plan.employees.some(id=>DurationModel.roleFactor(id,{...plan,availabilityFactors:f})>0))return {result:{displayHours:19},entries:e};return {result:predict({...plan,availabilityFactors:f}),entries:e};};
 
  // Deterministic bisection of duration - prediction(duration), bounded to model domain.
 
@@ -92,15 +92,26 @@ function solveAvailability(plan,predict){
 
  const laborHours=current.result.crew.reduce((s,p)=>s+(entries[p.id]?.availableHours??current.result.displayHours),0);
 
- const goalValue=plan.goalMode==='manhours'?laborHours:current.result.displayHours,target=Number(plan.targetValue)||0;
+ const goalValue=plan.goalMode==='manhours'?laborHours:current.result.displayHours,target=Number(plan.targetValue)||0,delta=target>0?goalValue-target:null,riskBand=plan.goalMode==='manhours'?2:.5;
 
- return {...current.result,laborHours,delta:target>0?goalValue-target:null,availability:entries,availabilityIterations:iterations,availabilityConverged:true,warnings:[...(current.result.warnings||[]),...warnings],crew:current.result.crew.map(p=>({...p,availability:entries[p.id]||null})),scenarioRule:current.result.scenarioRule+' Clock availability is the overlap with the predicted inventory interval; clock interpretations are shown per worker.'};
+ return {...current.result,laborHours,delta,recommendation:delta===null?'Duration Estimate':Math.abs(delta)<=riskBand?'On Target':delta>0?'Estimate Exceeds Goal':'Ahead of Goal',availability:entries,availabilityIterations:iterations,availabilityConverged:true,warnings:[...(current.result.warnings||[]),...warnings],crew:current.result.crew.map(p=>({...p,availability:entries[p.id]||null})),scenarioRule:current.result.scenarioRule+' Clock availability is the overlap with the predicted inventory interval; clock interpretations are shown per worker.'};
 
 }
 
 
 
 return {solveAvailability,workerAvailability};})();
+
+export function onsitePlanningRange(snapshot,plan,result){
+ const model=plan.model==='reference'||!result.mainAvailable?'reference':'integrated';
+ const evidence=snapshot.evidence?.onsiteRange?.[model];
+ if(!result.mainAvailable||model==='integrated'&&!result.crewTiming||!evidence||evidence.count<20||!(evidence.medianAbsoluteErrorHours>0)||!Number.isFinite(result.displayHours))return null;
+ // Median absolute error is a compact typical-error band, not a confidence interval.
+ // Reduced capacity can widen it; increased capacity must not manufacture precision.
+ const scale=Math.max(1,result.capacityScenario?.ratio||1),width=evidence.medianAbsoluteErrorHours*60*scale;
+ const lowerMinutes=Math.max(0,Math.floor((result.displayHours*60-width)/5)*5),upperMinutes=Math.ceil((result.displayHours*60+width)/5)*5;
+ return {lowerHours:lowerMinutes/60,upperHours:upperMinutes/60,count:evidence.count,kind:'typical-error',scenario:!!result.adjusted,model};
+}
 
 export function resolveSchedulePlan(snapshot,plan){
 
@@ -228,11 +239,11 @@ const DurationModel = (() => {
 
     for (const role of Object.keys(DEFAULT_MODES)) {
 
-      if (role === 'earlyLate' && Object.hasOwn(plan.availabilityFactors || {}, id) && (plan.modes?.earlyLate||DEFAULT_MODES.earlyLate)===DEFAULT_MODES.earlyLate) continue;
+      if (role === 'earlyLate' && Object.hasOwn(plan.availabilityFactors || {}, id) && (plan.modes?.earlyLate==='auto'||plan.modes?.earlyLate===undefined)) continue;
 
       const assigned = role === "supervisor" ? roles.supervisor === id : (roles[role] || []).includes(id);
 
-      if (assigned) factor = Math.min(factor, role === 'supervisor' && modes.supervisor === 'auto' ? (plan.supervisorContributions?.[id]?.factor ?? .5) : factors[modes[role]] ?? factors[DEFAULT_MODES[role]]);
+      if (assigned) factor = Math.min(factor, role === 'supervisor' && modes.supervisor === 'auto' ? (plan.supervisorContributions?.[id]?.factor ?? .5) : role === 'rx' && modes.rx === 'auto' ? (plan.rxContributions?.[id]?.factor ?? plan.rxContribution?.factor ?? .5) : factors[modes[role]] ?? factors[DEFAULT_MODES[role]]);
 
     }
 
@@ -242,7 +253,7 @@ const DurationModel = (() => {
 
     if (shrink.mode === "all" || (shrink.mode === "selected" && (shrink.employeeIds || []).includes(id))) {
 
-      factor *= Math.max(0.01, 1 - clamp(Number(shrink.percent) || 0, 0, 100) / 100);
+      factor *= Math.max(0, 1 - clamp(Number(shrink.percent) || 0, 0, 100) / 100);
 
     }
 
@@ -948,21 +959,27 @@ export function scenarioActive(plan){return Object.keys(plan.availabilityFactors
 
 export function predictPlan(snapshot,plan){
 
- plan=resolveSchedulePlan(snapshot,plan);
+ plan=resolveSchedulePlan(snapshot,{...plan,employees:unique(plan.employees)});
 
  const store=snapshot.stores.find(s=>s.key===plan.storeKey),v=store?.scenario?.variants[plan.countingMode||'default'],estimates=v?.supervisorEstimates?.[plan.useRecentAccountProduction?'recent':'standard']||{};
 
  const source=estimates[plan.roles?.supervisor],supervisorContributions=source?{[plan.roles.supervisor]:{factor:source[0],count:source[1],scope:source[2],supported:source[3]}}:{};
 
- const result=solveAvailability({...plan,supervisorContributions},p=>predictPlanCore(snapshot,p));
+ const rxEvidence=v?.rxEstimate||{factor:.5,count:0,supported:false,scope:'50% assumption: Rx history unavailable'},rxCount=unique(plan.roles?.rx||[]).length;
+ const rxContribution=rxEvidence.supported&&rxCount?{...rxEvidence,factor:Math.max(0,Math.min(1,1-(1-rxEvidence.factor)*(rxEvidence.referenceWorkers||1)/rxCount)),scope:rxEvidence.scope+'; shared across '+rxCount+' assigned Rx worker'+(rxCount===1?'':'s')}:rxEvidence;
+ const result=solveAvailability({...plan,supervisorContributions,rxContribution,rxContributions:v?.rxEstimates?.[plan.useRecentAccountProduction?'recent':'standard']||{}},p=>predictPlanCore(snapshot,p));
+ result.onsiteRange=onsitePlanningRange(snapshot,plan,result);
 
  if(!Number.isFinite(result.displayHours)||result.displayHours>18)throw Error('The selected counting capacity requires more than 18 hours. Add capacity or review contributions.');
 
- let supervisorOnsiteHours=plan.employees.includes(plan.roles?.supervisor)?(result.crewTiming&&Number.isFinite(result.crewTiming.supervisorOffsetHours)?Math.max(.25,Math.min(18,result.displayHours+result.crewTiming.supervisorOffsetHours)):plan.employees.length===1?result.displayHours:null):null;
+ let supervisorOnsiteHours=plan.employees.includes(plan.roles?.supervisor)?(result.crewTiming&&Number.isFinite(result.crewTiming.supervisorOffsetHours)?Math.max(.25,result.displayHours+result.crewTiming.supervisorOffsetHours):plan.employees.length===1?result.displayHours:null):null;
 
- if(supervisorOnsiteHours!==null&&/^\d{2}:\d{2}$/.test(plan.startTime||'')){const bounds=workerAvailability(plan.notes?.[plan.roles.supervisor],plan.startTime,Math.max(.25,supervisorOnsiteHours));if(bounds){const [h,m]=plan.startTime.split(':').map(Number),crewStart=h*60+m,predictedStart=crewStart+(result.crewTiming?.supervisorArrivalOffsetHours||0)*60,predictedEnd=predictedStart+supervisorOnsiteHours*60,arrival=bounds.arrivalMinutes??predictedStart,departure=Math.min(predictedEnd,bounds.departureMinutes??predictedEnd);supervisorOnsiteHours=Math.max(0,Math.min(18,(departure-arrival)/60));}}
+ let supervisorArrivalOffsetHours=result.crewTiming?.supervisorArrivalOffsetHours||0;
+ if(supervisorOnsiteHours!==null&&/^\d{2}:\d{2}$/.test(plan.startTime||'')){const bounds=workerAvailability(plan.notes?.[plan.roles.supervisor],plan.startTime,Math.max(.25,supervisorOnsiteHours));if(bounds){const [h,m]=plan.startTime.split(':').map(Number),crewStart=h*60+m,predictedStart=crewStart+(result.crewTiming?.supervisorArrivalOffsetHours||0)*60,predictedEnd=predictedStart+supervisorOnsiteHours*60,arrival=bounds.arrivalMinutes??predictedStart,departure=Math.min(predictedEnd,bounds.departureMinutes??predictedEnd);supervisorOnsiteHours=Math.max(0,(departure-arrival)/60);supervisorArrivalOffsetHours=(arrival-crewStart)/60;}}
 
- return {...result,hasScheduledJob:plan.hasScheduledJob,scheduledDate:plan.hasScheduledJob?plan.date:null,supervisorOnsiteHours,startTime:plan.startTime,startSource:plan.startSource,scheduledJob:plan.scheduledJob,crewDeparture:departureClock(plan,result.displayHours),supervisorDeparture:result.supervisorExtensionHours===null?null:departureClock(plan,result.displayHours+result.supervisorExtensionHours),warnings:[...(result.warnings||[]),...(plan.scheduleWarning?[plan.scheduleWarning]:[])]};
+ const supervisorTimeUnavailableReason=supervisorOnsiteHours>18?'outside the 18-hour planning range':null;
+ if(supervisorTimeUnavailableReason)supervisorOnsiteHours=null;
+ return {...result,hasScheduledJob:plan.hasScheduledJob,scheduledDate:plan.hasScheduledJob?plan.date:null,supervisorOnsiteHours,supervisorTimeUnavailableReason,startTime:plan.startTime,startSource:plan.startSource,scheduledJob:plan.scheduledJob,crewDeparture:departureClock(plan,result.displayHours),supervisorDeparture:supervisorOnsiteHours===null?null:departureClock(plan,supervisorArrivalOffsetHours+supervisorOnsiteHours),warnings:[...(result.warnings||[]),...(supervisorTimeUnavailableReason?['Supervisor time exceeds the 18-hour planning range; review crew capacity or availability.']:[]),...(plan.scheduleWarning?[plan.scheduleWarning]:[])]};
 
 }
 
@@ -972,7 +989,7 @@ function predictPlanCore(snapshot,plan){
 
  const roleKeys=['rx','training','earlyLate'];if(roleKeys.some(k=>(plan.roles?.[k]||[]).some(id=>!plan.employees.includes(id))))throw Error('All roles must belong to the selected crew.');
 
- if(Object.entries(plan.modes||{}).some(([k,v])=>!(k in DurationModel.DEFAULT_MODES)||!['full','p70','p50','p30','none',...(k==='supervisor'?['auto']:[])].includes(v)))throw Error('Invalid contribution mode.');
+ if(Object.entries(plan.modes||{}).some(([k,v])=>!(k in DurationModel.DEFAULT_MODES)||!['full','p70','p50','p30','none',...(['supervisor','rx','training','earlyLate'].includes(k)?['auto']:[])].includes(v)))throw Error('Invalid contribution mode.');
 
  const shrink=Number(plan.shrink?.percent)||0;if(shrink<0||shrink>100)throw Error('Production shrink must be between 0 and 100%.');
 
@@ -1006,7 +1023,7 @@ function predictPlanCore(snapshot,plan){
 
  const capacityScenario={baselineCapacity,currentCapacity,ratio:capacityRatio,workload:historicalCrewHours*baselineCapacity,historicalCrewHours,historicalFullOnsiteHours};
 
- const crew=plan.employees.map(id=>{const person=snapshot.persons.find(p=>p.key===id),factor=DurationModel.roleFactor(id,plan),standard=snapshot.scenarioRates[reference.pack.rates][id],recent=snapshot.scenarioRates[reference.pack.recentRates][id],speed=reference.rates[id][0];return {id,name:person.name,factor,supervisorContribution:id===plan.roles?.supervisor&&plan.modes?.supervisor==='auto'?(plan.supervisorContributions?.[id]||{factor:.5,count:0,scope:'50% fallback: sparse supervisor production',supported:false}):null,speed,standardSpeed:standard[0],recentSpeed:recent[0],known:reference.rates[id][1],effectiveSpeed:speed*factor,predictedPieces:speed*factor*displayHours};}).sort((a,b)=>b.effectiveSpeed-a.effectiveSpeed||a.name.localeCompare(b.name));
+ const crew=plan.employees.map(id=>{const person=snapshot.persons.find(p=>p.key===id),factor=DurationModel.roleFactor(id,plan),standard=snapshot.scenarioRates[reference.pack.rates][id],recent=snapshot.scenarioRates[reference.pack.recentRates][id],speed=reference.rates[id][0];return {id,name:person.name,factor,rxContribution:(plan.roles?.rx||[]).includes(id)&&plan.modes?.rx==='auto'?(plan.rxContributions?.[id]||plan.rxContribution):null,supervisorContribution:id===plan.roles?.supervisor&&plan.modes?.supervisor==='auto'?(plan.supervisorContributions?.[id]||{factor:.5,count:0,scope:'50% fallback: sparse supervisor production',supported:false}):null,speed,standardSpeed:standard[0],recentSpeed:recent[0],recentObservedSpeed:snapshot.stores.find(s=>s.key===plan.storeKey)?.scenario?.recentAccountProduction?.[id]??null,known:reference.rates[id][1],effectiveSpeed:speed*factor,predictedPieces:speed*factor*displayHours};}).sort((a,b)=>b.effectiveSpeed-a.effectiveSpeed||a.name.localeCompare(b.name));
 
  const target=Number(plan.targetValue)||0;if(target<0)throw Error('Target must not be negative.');const laborHours=displayHours*crew.length,goalValue=plan.goalMode==='manhours'?laborHours:displayHours,delta=target>0?goalValue-target:null,riskBand=plan.goalMode==='manhours'?2:.5;
 
@@ -1026,7 +1043,7 @@ export function resolveNames(text,people,available=people.map(p=>p.key)){
 
 export async function allocate(snapshot,config,{onProgress=()=>{},cancelled=()=>false}={}){
 
- const ids=unique(config.available||[]),known=new Set(snapshot.persons.map(p=>p.key));if(ids.length<2||ids.length>snapshot.persons.length||ids.some(id=>!known.has(id)))throw Error('Choose at least two current available employees.');if(config.storeA===config.storeB)throw Error('Choose two different stores.');if(!config.supervisorA||!config.supervisorB||config.supervisorA===config.supervisorB||![config.supervisorA,config.supervisorB].every(id=>ids.includes(id)))throw Error('Choose two distinct available supervisors.');if(!(Number(config.goalA)>0&&Number(config.goalB)>0))throw Error('Set a positive goal for both stores.');
+ const ids=unique(config.available||[]),known=new Set(snapshot.persons.map(p=>p.key));if(ids.length<2||ids.length>snapshot.persons.length||ids.some(id=>!known.has(id)))throw Error('Choose at least two current available employees.');if(!snapshot.stores.some(st=>st.key===config.storeA)||!snapshot.stores.some(st=>st.key===config.storeB))throw Error('Choose two stores.');if(config.storeA===config.storeB)throw Error('Choose two different stores.');if(!config.supervisorA||!config.supervisorB||config.supervisorA===config.supervisorB||![config.supervisorA,config.supervisorB].every(id=>ids.includes(id)))throw Error('Choose two distinct available supervisors.');if(!(Number(config.goalA)>0&&Number(config.goalB)>0))throw Error('Set a positive goal for both stores.');
 
  const constraints=config.constraints||{linkedGroups:[],lockedStoreA:[],lockedStoreB:[]};if([...constraints.lockedStoreA,...constraints.lockedStoreB,...constraints.linkedGroups.flat()].some(id=>!ids.includes(id)))throw Error('All linked/locked employees must be available.');
 
@@ -1163,6 +1180,7 @@ export function extractBulkEmployeeEntries(rawText) {
   const rows = parseClipboardTable(rawText).filter((cells,index)=>!(index===0&&/^(?:employee(?: name)?|name|crew member)$/i.test(cells[0])&&cells.length>1));
 
   const hasMultipleColumns = rows.some((cells) => cells.length > 1);
+  if(rows.some(cells=>!cleanText(cells[0])&&cells.slice(1).some(Boolean)))throw Error('A notes row has no employee name.');
 
   if (hasMultipleColumns) {
 
@@ -1219,4 +1237,3 @@ export function formatOnsiteDuration(value){
  return Math.floor(minutes/60)+'h '+String(minutes%60).padStart(2,'0')+'m ('+(minutes/60).toFixed(2)+' hrs)';
 
 }
-
