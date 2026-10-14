@@ -1,4 +1,4 @@
-import {predict} from './predictor.a30df4296dbda746729ed217a460eca1899e7ec3e854a926769f8b5070d21659.js';
+import {predict} from './predictor.120eb733567d4c420dbc4d3f3d7de3dfdaebcbf63458a59e598af14778517f0f.js';
 
 export const {solveAvailability,workerAvailability}=(()=>{
 

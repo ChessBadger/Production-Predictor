@@ -16,7 +16,7 @@ def inspect_private(s):
   elif isinstance(v,list):
    for x in v:visit(x)
  visit(s)
- return {'schema':2,'classification':'APPROVED PUBLIC DERIVED PLANNING DATA','scope':'Current selectable roster; complete latest-visit historical crew display','employeeCount':len(s['persons']),'storeCount':len(s['stores']),'exposed':['Current employee display names and opaque package keys','Current employee speed, evidence, recent weekly hours and residual summaries','Role-conditioned account productivity, participation and experience for current employees','Supported account/store display choices and opaque account keys','Selected-week scheduled visit dates, times, customer number, address, contact, map and schedule notes','Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries','Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity','All recorded members of latest store crew, including former employee display names, and selected latest-inventory production totals/export hours/recorded clocks when unambiguous','Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries','Frozen model trees, thresholds and feature names; cutoff/version/fingerprint'],'excluded':['Selectable former staff and former-employee predictive profiles','Employee numbers and raw export/attendance records','Raw workbooks, bulk historical visits, visit dates and complete timesheet/export rows','Databases, source receipts, archives and backups','Local paths, credentials, tokens and source file hashes'],'warning':'Anyone with the site URL can inspect the approved names and derived planning coefficients. This is not access-controlled data.'}
+ return {'schema':2,'classification':'APPROVED PUBLIC DERIVED PLANNING DATA','scope':'Current selectable roster; complete latest-visit historical crew display','employeeCount':len(s['persons']),'storeCount':len(s['stores']),'exposed':['Current employee display names and opaque package keys','Current employee speed, evidence, recent weekly hours and residual summaries','Role-conditioned account productivity, participation and experience for current employees','Supported account/store display choices and opaque account keys','Selected-week scheduled visit dates, times, customer number, address, contact, map and schedule notes','Aggregate visit workload, duration, crew size, seasonal/attendance and residual summaries','Limited incumbent reference duration/capacity/evidence/age weights and current-employee overlap membership required for numeric parity','Latest crew before the week plus completed in-week crews, with visit dates and former employee display names, and selected latest-inventory production totals/export hours/recorded clocks when unambiguous','Current-employee regular/Modas and most-recent-account rate variants; aggregate original reference profiles and archived accuracy/error summaries','Frozen model trees, thresholds and feature names; cutoff/version/fingerprint'],'excluded':['Selectable former staff and former-employee predictive profiles','Employee numbers and raw export/attendance records','Raw workbooks, bulk historical visits and complete timesheet/export rows','Databases, source receipts, archives and backups','Local paths, credentials, tokens and source file hashes'],'warning':'Anyone with the site URL can inspect the approved names and derived planning coefficients. This is not access-controlled data.'}
 
 def verify_planning(s):
  inspect_private(s)
@@ -31,23 +31,25 @@ def verify_planning(s):
  for r in [*s['incumbentRates'].values(),*s['scenarioRates'].values()]:
   if set(r)!=ids:raise ValueError('Historical person leaked into incumbent rates')
  for store in s['stores']:
-  if set(store)!={'key','name','context','lastCrew','stableKey','scenario','needsRx'} or not store['scenario']['variants']['default']:raise ValueError('Unexpected store fields')
+  if set(store)!={'key','name','context','lastCrew','lastCrewVisits','stableKey','scenario','needsRx'} or not store['scenario']['variants']['default']:raise ValueError('Unexpected store fields')
   for j in store['scenario'].get('scheduleJobs',[]):
    if set(j)!={'key','date','startTime','typeOfInv','plannedDurationHours','plannedCrewSize','details'} or not s['cutoff']<=j['date']<=s['validThrough'] or (j['startTime'] and not re.fullmatch(r'\d{2}:\d{2}',j['startTime'])):raise ValueError('Unexpected scheduled-job fields or date')
    if set(j['details'])!={'customerNumber','address','city','stateCode','zipcode','phone','mapLink','dateScheduled','storeNotes','notes','runName','meetTimeText'} or any(not isinstance(v,str) for v in j['details'].values()):raise ValueError('Unexpected schedule details')
-  last=store['lastCrew']
-  if set(last)-{'employees','supervisor','supervisorStatus','rx','rows','names'}:raise ValueError('Unexpected last-crew metadata')
-  if last.get('supervisorStatus','recorded' if last['supervisor'] else 'missing') not in ['recorded','not-current','missing']:raise ValueError('Invalid last-crew supervisor status')
-  if 'supervisorStatus' in last and (last['supervisorStatus']=='recorded')!=bool(last['supervisor']):raise ValueError('Inconsistent last-crew supervisor status')
-  history_ids=set(last.get('names',{}))
-  if history_ids!=set(last['employees'])|({last['supervisor']} if last['supervisor'] else set()) or any(not re.fullmatch(r'p[0-9]+',k) or not isinstance(v,str) or not v.strip() for k,v in last.get('names',{}).items()):raise ValueError('Invalid historical display identities')
-  for row in last.get('rows',[]):
-   if row.get('support') not in ['recorded','missing','ambiguous','unconfirmed']:raise ValueError('Unexpected curated last-crew support label')
-   if set(row)!={'key','piecesPerHr','inStoreHours','pieces','recordedIn','recordedOut','support'} or row['key'] not in history_ids or row['key'] not in last['employees']:raise ValueError('Unexpected last-crew fields or identity')
-   for field in ['recordedIn','recordedOut']:
-    if row[field] is not None and not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?',row[field]):raise ValueError('Invalid recorded clock')
-
-  if not set(last['employees'])<=history_ids or (last['supervisor'] and last['supervisor'] not in history_ids) or not set(last['rx'])<=set(last['employees']):raise ValueError('Invalid current last crew')
+  for last in [store['lastCrew'],*store['lastCrewVisits']]:
+   if set(last)-{'employees','supervisor','supervisorStatus','rx','rows','names','date'}:raise ValueError('Unexpected last-crew metadata')
+   if last.get('supervisorStatus','recorded' if last['supervisor'] else 'missing') not in ['recorded','not-current','missing']:raise ValueError('Invalid last-crew supervisor status')
+   if 'supervisorStatus' in last and (last['supervisorStatus']=='recorded')!=bool(last['supervisor']):raise ValueError('Inconsistent last-crew supervisor status')
+   history_ids=set(last.get('names',{}))
+   if history_ids!=set(last['employees'])|({last['supervisor']} if last['supervisor'] else set()) or any(not re.fullmatch(r'p[0-9]+',k) or not isinstance(v,str) or not v.strip() for k,v in last.get('names',{}).items()):raise ValueError('Invalid historical display identities')
+   for row in last.get('rows',[]):
+    if row.get('support') not in ['recorded','missing','ambiguous','unconfirmed']:raise ValueError('Unexpected curated last-crew support label')
+    if set(row)!={'key','piecesPerHr','inStoreHours','pieces','recordedIn','recordedOut','support'} or row['key'] not in history_ids or row['key'] not in last['employees']:raise ValueError('Unexpected last-crew fields or identity')
+    for field in ['recordedIn','recordedOut']:
+     if row[field] is not None and not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?',row[field]):raise ValueError('Invalid recorded clock')
+ 
+   if not set(last['employees'])<=history_ids or (last['supervisor'] and last['supervisor'] not in history_ids) or not set(last['rx'])<=set(last['employees']):raise ValueError('Invalid current last crew')
+  dates=[v['date'] for v in store['lastCrewVisits']]
+  if len(dates)!=len(set(dates)) or len(dates)>7 or any(not re.fullmatch(r'\d{4}-\d{2}-\d{2}',d) or d>=s['validThrough'] for d in dates):raise ValueError('Invalid display visit dates')
   for k in (store['context']['incumbent']['kernels'] if store['context'] else []):
    for f in ['full','counter']:
     if not set(k[f]['members'])<=ids:raise ValueError('Former employee reference leaked')
