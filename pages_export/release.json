@@ -1,7 +1,7 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "fed11803a48d65dbc814525be20bb62b5b0053424c106cb8b1ecbeed76c6f5cc",
+  "version": "f2ba818a1cfa2ceb6892257513d4dce236b67d05fb911940c8e6bb6456644d54",
   "cutoff": "2026-10-12",
   "validThrough": "2026-10-18",
   "files": {
@@ -18,8 +18,8 @@
       "sha256": "3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8"
     },
     "app": {
-      "path": "app.7aac31e7b0b910887c7f8c14b2a930ce4ff4ca48c03056da472b296101d06043.js",
-      "sha256": "7aac31e7b0b910887c7f8c14b2a930ce4ff4ca48c03056da472b296101d06043"
+      "path": "app.1cf79a52ce073bb08833453c006bea5b658520340dc6eed59a6350c2f1e30d08.js",
+      "sha256": "1cf79a52ce073bb08833453c006bea5b658520340dc6eed59a6350c2f1e30d08"
     },
     "style": {
       "path": "style.3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc.css",
