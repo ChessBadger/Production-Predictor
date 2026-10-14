@@ -106,6 +106,7 @@ def build_clean_repository(w,out):
   staged=subprocess.run(['git','-C',str(repo),'diff','--cached','--name-only'],capture_output=True,text=True)
   if staged.stdout.strip():raise ValueError('Publishing repository contains staged user work. Build stopped without overwriting it; unstage or preserve that work before rebuilding.')
  if actual-expected:raise ValueError('Unknown publishing files')
+ repo.mkdir(parents=True,exist_ok=True)
  (repo/'.gitattributes').write_bytes(GIT_ATTRIBUTES.encode('utf8'))
  target=repo/'pages_export';target.mkdir(parents=True,exist_ok=True)
  if previous:
