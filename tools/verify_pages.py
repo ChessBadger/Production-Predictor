@@ -1,5 +1,5 @@
 """Build and verify only the explicitly approved current-roster derived Pages release."""
-import pathlib,json,hashlib,re,subprocess,math
+import pathlib,json,hashlib,re,subprocess,math,gzip
 H=lambda b:hashlib.sha256(b).hexdigest()
 # Generated UTF-8 assets have canonical LF bytes before content addressing.
 def asset_bytes(path):
@@ -86,10 +86,12 @@ def verify_public(out):
  for f in m['files']:
   if 'sha256' in f and H((out/f['path']).read_bytes())!=f['sha256']:raise ValueError('Artifact hash mismatch '+f['path'])
  for role,f in release['files'].items():
-  if not re.fullmatch(role+r'\.[a-f0-9]{64}\.'+('json' if role=='planning' else 'css' if role=='style' else 'js'),f['path']) or H((out/f['path']).read_bytes())!=f['sha256']:raise ValueError('Release filename/hash mismatch')
+  if not re.fullmatch(role+r'\.[a-f0-9]{64}\.'+(r'json(?:\.gz)?' if role=='planning' else 'css' if role=='style' else 'js'),f['path']) or H((out/f['path']).read_bytes())!=f['sha256']:raise ValueError('Release filename/hash mismatch')
  if H(json.dumps({k:release[k] for k in ['files','shellSha256','bootstrapSha256']},sort_keys=True,separators=(',',':')).encode())!=release['version']:raise ValueError('Release version mismatch')
  if H((out/'index.html').read_bytes())!=release['shellSha256'] or H((out/'bootstrap.js').read_bytes())!=release['bootstrapSha256']:raise ValueError('Shell/bootstrap hash mismatch')
- verify_planning(json.loads((out/release['files']['planning']['path']).read_text(encoding='utf8')))
+ planning_path=out/release['files']['planning']['path'];planning_bytes=planning_path.read_bytes()
+ verify_planning(json.loads(gzip.decompress(planning_bytes) if planning_path.suffix=='.gz' else planning_bytes))
+ if any(p.stat().st_size>=100*1024*1024 for p in out.iterdir() if p.is_file()):raise ValueError('Public artifact exceeds the GitHub 100 MiB file limit; publication stopped before committing.')
  for path in [out/'index.html',out/release['files']['app']['path']]:
   text=path.read_text(encoding='utf8')
   if re.search(r'type=["\x27]file|planningFile|forecastFile|readFile\(',text):raise ValueError('Visitor file input/import found')
@@ -110,8 +112,8 @@ def build_public(w,snapshot):
  predictor=asset_bytes(src/'predictor.mjs');pn='predictor.'+H(predictor)+'.js';planner=(src/'planner.mjs').read_text(encoding='utf8').replace('./predictor.mjs','./'+pn).encode();en='planner.'+H(planner)+'.js'
  shell=(src/'index.html').read_text(encoding='utf8');body=shell.split('<body>',1)[1].split('</body>',1)[0]
  app=(src/'app.mjs').read_text(encoding='utf8').replace('./predictor.mjs','./'+pn).replace('./planner.mjs','./'+en).replace("throw Error('Approved sign-in required.');","throw Error('Approved sign-in required.');\ndocument.body.innerHTML="+json.dumps(body)+';').encode()
- content={'predictor':predictor,'planner':planner,'auth':asset_bytes(src/'auth.mjs'),'app':app,'style':asset_bytes(src/'style.css'),'planning':json.dumps(snapshot,ensure_ascii=False,allow_nan=False,separators=(',',':')).encode()}
- files={role:{'path':role+'.'+H(data)+('.json' if role=='planning' else '.css' if role=='style' else '.js'),'sha256':H(data)} for role,data in content.items()}
+ content={'predictor':predictor,'planner':planner,'auth':asset_bytes(src/'auth.mjs'),'app':app,'style':asset_bytes(src/'style.css'),'planning':gzip.compress(json.dumps(snapshot,ensure_ascii=False,allow_nan=False,separators=(',',':')).encode(),mtime=0)}
+ files={role:{'path':role+'.'+H(data)+('.json.gz' if role=='planning' else '.css' if role=='style' else '.js'),'sha256':H(data)} for role,data in content.items()}
  release={'schema':3,'authPolicy':'existing-client-ui-gate-public-data','version':H(json.dumps(files,sort_keys=True,separators=(',',':')).encode()),'cutoff':snapshot['cutoff'],'validThrough':snapshot['validThrough'],'files':files}
  index=b'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://www.gstatic.com https://apis.google.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.firebaseapp.com; script-src 'self' https://www.gstatic.com https://apis.google.com; frame-src https://*.firebaseapp.com https://accounts.google.com; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>Shift Crew Planner</title></head><body><main role="status" aria-live="polite"><h1>Shift Crew Planner</h1><p id="bootStatus">Loading latest shared planning data...</p><button id="retry" type="button" hidden>Retry loading</button></main><script type="module" src="./bootstrap.js?v=3"></script></body></html>'''
  bootstrap=asset_bytes(src/'bootstrap.mjs');index=index.replace(b'bootstrap.js?v=3',b'bootstrap.js?v='+H(bootstrap).encode());release.update(shellSha256=H(index),bootstrapSha256=H(bootstrap));release['version']=H(json.dumps({k:release[k] for k in ['files','shellSha256','bootstrapSha256']},sort_keys=True,separators=(',',':')).encode())
