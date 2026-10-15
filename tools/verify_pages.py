@@ -31,7 +31,13 @@ def verify_planning(s):
  for r in [*s['incumbentRates'].values(),*s['scenarioRates'].values()]:
   if set(r)!=ids:raise ValueError('Historical person leaked into incumbent rates')
  for store in s['stores']:
-  if set(store)!={'key','name','context','lastCrew','lastCrewVisits','stableKey','scenario','needsRx'} or not store['scenario']['variants']['default']:raise ValueError('Unexpected store fields')
+  if set(store)!={'key','name','context','lastCrew','lastCrewVisits','staffingAnchors','stableKey','scenario','needsRx'} or not store['scenario']['variants']['default']:raise ValueError('Unexpected store fields')
+  if set(store['staffingAnchors'])!={k for k,v in store['scenario']['variants'].items() if v}:raise ValueError('Missing staffing anchor variants')
+  for phases in store['staffingAnchors'].values():
+   for a in phases.values():
+    if not isinstance(a.get('hasTiming'),bool) or not isinstance(a.get('mainAvailable'),bool) or (a.get('mainAvailable') and (not isinstance(a.get('mainHours'),(int,float)) or not math.isfinite(a['mainHours']) or a['mainHours']<=0)):raise ValueError('Invalid staffing anchor support')
+    if set(a)!={'capacity','mainAvailable','mainHours','referenceHours','integratedFullHours','integratedCrewHours','hasTiming'}:raise ValueError('Invalid staffing anchor fields')
+    if any(not isinstance(a[k],(int,float)) or not math.isfinite(a[k]) or a[k]<=0 for k in ['capacity','referenceHours','integratedFullHours','integratedCrewHours']):raise ValueError('Invalid staffing anchor values')
   for j in store['scenario'].get('scheduleJobs',[]):
    if set(j)!={'key','date','startTime','typeOfInv','plannedDurationHours','plannedCrewSize','details'} or not s['cutoff']<=j['date']<=s['validThrough'] or (j['startTime'] and not re.fullmatch(r'\d{2}:\d{2}',j['startTime'])):raise ValueError('Unexpected scheduled-job fields or date')
    if set(j['details'])!={'customerNumber','address','city','stateCode','zipcode','phone','mapLink','dateScheduled','storeNotes','notes','runName','meetTimeText'} or any(not isinstance(v,str) for v in j['details'].values()):raise ValueError('Unexpected schedule details')
