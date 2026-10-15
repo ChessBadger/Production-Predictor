@@ -983,9 +983,23 @@ export function predictPlan(snapshot,plan){
 
 }
 
+// A store's workload anchor must not depend on the crew being compared.
+export function workloadAnchorPlan(snapshot,plan){
+ const store=snapshot.stores.find(s=>s.key===plan.storeKey),known=new Set(snapshot.persons.map(p=>p.key));
+ const last=store.lastCrew||{},members=unique([...(last.employees||[]),last.supervisor].filter(id=>known.has(id)));
+ const pack=store.scenario.variants[plan.countingMode||'default']||store.scenario.variants.default;
+ const rates=snapshot.scenarioRates[pack.rates];
+ const historicalMembers=unique(pack.kernels.flatMap(k=>k.full.members)).filter(id=>known.has(id));
+ const fallbackCount=Math.max(1,Math.min(50,Math.round(store.context?.fixed.priorCrew||historicalMembers.length||8)));
+ const fallback=historicalMembers.length?historicalMembers:snapshot.persons.map(p=>p.key).sort((a,b)=>(rates[b]?.[0]||0)-(rates[a]?.[0]||0)||a.localeCompare(b));
+ const employees=(members.length?members:fallback.slice(0,fallbackCount)).slice(0,50);
+ return {...plan,employees,availabilityFactors:{},supervisorContributions:{},rxContributions:{},notes:{},roles:{supervisor:employees.includes(last.supervisor)?last.supervisor:'',rx:(last.rx||[]).filter(id=>employees.includes(id)),training:[],earlyLate:[]},modes:{...DurationModel.DEFAULT_MODES},shrink:{percent:0,mode:'none',employeeIds:[]},useRecentAccountProduction:false};
+}
+
 function predictPlanCore(snapshot,plan){
 
- const main=predict(snapshot,plan),mainAvailable=main.status==='ok';
+ predict(snapshot,plan); // Validate the user's crew and date independently of the anchor.
+ const baselinePlan=workloadAnchorPlan(snapshot,plan),main=predict(snapshot,baselinePlan),mainAvailable=main.status==='ok';
 
  const roleKeys=['rx','training','earlyLate'];if(roleKeys.some(k=>(plan.roles?.[k]||[]).some(id=>!plan.employees.includes(id))))throw Error('All roles must belong to the selected crew.');
 
@@ -995,7 +1009,7 @@ function predictPlanCore(snapshot,plan){
 
  if((plan.shrink?.employeeIds||[]).some(id=>!plan.employees.includes(id)))throw Error('Shrink selections must belong to the selected crew.');
 
- const baselinePlan={...plan,availabilityFactors:{},supervisorContributions:{},roles:{supervisor:plan.roles?.supervisor||'',rx:plan.roles?.rx||[],training:[],earlyLate:[]},modes:{...DurationModel.DEFAULT_MODES},shrink:{percent:0,mode:'none',employeeIds:[]},useRecentAccountProduction:false};
+
 
  const referenceBase=referencePrediction(snapshot,baselinePlan),reference=referencePrediction(snapshot,plan,plan.countingMode||'default');if(!reference||!referenceBase)throw Error('No counting contribution or reference evidence supports this plan.');
 
@@ -1007,7 +1021,7 @@ function predictPlanCore(snapshot,plan){
 
  const historicalFullOnsiteHours=plan.model==='reference'||!mainAvailable?neutralReference.onSiteDuration:Math.max(.25,main.predictedHours+neutralReference.onSiteDuration-referenceBase.onSiteDuration);
 
- const timing=mainAvailable&&plan.model!=='reference'&&plan.employees.some(id=>id!==plan.roles?.supervisor)?snapshot.stores.find(s=>s.key===plan.storeKey)?.scenario?.crewTiming:null;
+ const timing=mainAvailable&&plan.model!=='reference'&&baselinePlan.employees.some(id=>id!==baselinePlan.roles?.supervisor)?snapshot.stores.find(s=>s.key===plan.storeKey)?.scenario?.crewTiming:null;
 
  const historicalCrewHours=timing?Math.max(.25,historicalFullOnsiteHours-timing.correctionHours):historicalFullOnsiteHours;
 
@@ -1027,7 +1041,7 @@ function predictPlanCore(snapshot,plan){
 
  const target=Number(plan.targetValue)||0;if(target<0)throw Error('Target must not be negative.');const laborHours=displayHours*crew.length,goalValue=plan.goalMode==='manhours'?laborHours:displayHours,delta=target>0?goalValue-target:null,riskBand=plan.goalMode==='manhours'?2:.5;
 
- return {...main,status:'ok',mainAvailable,crewSize:crew.length,main,reference,referenceBase,capacityScenario,displayHours,fullOnsiteHours,crewTiming:timing,supervisorExtensionHours,laborHours,effectiveCountingHours:displayHours*crew.reduce((a,p)=>a+p.factor,0),adjusted,crew,delta,recommendation:delta===null?'Duration Estimate':Math.abs(delta)<=riskBand?'On Target':delta>0?'Estimate Exceeds Goal':'Ahead of Goal',estimateKind:Math.abs(capacityRatio-1)>1e-9?'Fixed-workload capacity scenario':timing?'Crew estimate from prior clocks':!mainAvailable?'Original reference fallback — no mapped full history':plan.model==='reference'?'Original attendance-proxy reference':'Integrated full-onsite model',scenarioRule:'Fixed-workload scenario: the historical crew estimate is anchored to this crew at default contributions (supervisor/RX 50%, other counters 100%) and standard production in the selected counting mode. Time scales by baseline/current effective pieces per hour. The entire crew window is assumed to scale; separate counting-only time is unavailable. Supervisor time outside the crew window is retained. Scenario accuracy is not separately validated.',historicalCalibration:reference.pack.calibration};
+ return {...main,status:'ok',mainAvailable,crewSize:crew.length,main,reference,referenceBase,capacityScenario,displayHours,fullOnsiteHours,crewTiming:timing,supervisorExtensionHours,laborHours,effectiveCountingHours:displayHours*crew.reduce((a,p)=>a+p.factor,0),adjusted,crew,delta,recommendation:delta===null?'Duration Estimate':Math.abs(delta)<=riskBand?'On Target':delta>0?'Estimate Exceeds Goal':'Ahead of Goal',estimateKind:Math.abs(capacityRatio-1)>1e-9?'Fixed-workload capacity scenario':timing?'Crew estimate from prior clocks':!mainAvailable?'Original reference fallback — no mapped full history':plan.model==='reference'?'Original attendance-proxy reference':'Integrated full-onsite model',scenarioRule:'Fixed-workload scenario: the store workload is anchored to a fixed historical reference crew at default contributions (supervisor/RX 50%, other counters 100%) and standard production in the selected counting mode. Changing selected crew members changes capacity without changing that workload. Time scales by reference/current effective pieces per hour. The entire crew window is assumed to scale; separate counting-only time is unavailable. Supervisor time outside the crew window is retained. Scenario accuracy is not separately validated.',historicalCalibration:reference.pack.calibration};
 
 }
 
