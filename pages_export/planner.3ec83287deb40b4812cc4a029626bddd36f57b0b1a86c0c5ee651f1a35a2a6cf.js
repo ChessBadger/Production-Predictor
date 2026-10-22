@@ -1,4 +1,4 @@
-import {predict} from './predictor.120eb733567d4c420dbc4d3f3d7de3dfdaebcbf63458a59e598af14778517f0f.js';
+import {predict} from './predictor.eb21d9a23fa1e3026097792832ef396e6d3ed12626296a711db6b53b6b78ed0b.js';
 
 export const {solveAvailability,workerAvailability}=(()=>{
 
@@ -986,7 +986,9 @@ export function predictPlan(snapshot,plan){
 function predictPlanCore(snapshot,plan){
 
  const rawMain=predict(snapshot,plan),store=snapshot.stores.find(s=>s.key===plan.storeKey);
- const anchor=store.staffingAnchors?.[plan.countingMode||'default']?.[Number(plan.date.slice(5,7))%3];
+ // Keep the published staffing baseline usable beyond its original schedule window.
+ const anchors=store.staffingAnchors?.[plan.countingMode||'default'];
+ const anchor=anchors?.[Number(plan.date.slice(5,7))%3]||anchors?.[Number(snapshot.cutoff.slice(5,7))%3];
  if(!anchor)throw Error('Rebuild planning data to include full historical staffing anchors.');
  const main={...rawMain,predictedHours:anchor.mainHours},mainAvailable=anchor.mainAvailable;
 
@@ -1068,7 +1070,7 @@ export async function allocate(snapshot,config,{onProgress=()=>{},cancelled=()=>
 
 
 
-export function migrateDraft(draft,snapshot){if(!draft)return null;const people=new Map(snapshot.persons.map(p=>[p.stableKey,p.key])),stores=new Map(snapshot.stores.map(s=>[s.stableKey,s.key]));const map=i=>people.get(i);return {...draft,notes:Object.fromEntries(Object.entries(draft.stableNotes||{}).map(([id,note])=>[map(id),note]).filter(([id])=>id)),storeKey:stores.get(draft.stableStore)||'',employees:(draft.stableEmployees||[]).map(map).filter(Boolean),roles:{supervisor:map(draft.stableRoles?.supervisor)||'',rx:(draft.stableRoles?.rx||[]).map(map).filter(Boolean),training:(draft.stableRoles?.training||[]).map(map).filter(Boolean),earlyLate:(draft.stableRoles?.earlyLate||[]).map(map).filter(Boolean)},shrink:{...draft.shrink,employeeIds:(draft.stableShrink||[]).map(map).filter(Boolean)},date:draft.date<snapshot.cutoff?snapshot.cutoff:draft.date>snapshot.validThrough?snapshot.validThrough:draft.date};}
+export function migrateDraft(draft,snapshot){if(!draft)return null;const people=new Map(snapshot.persons.map(p=>[p.stableKey,p.key])),stores=new Map(snapshot.stores.map(s=>[s.stableKey,s.key]));const map=i=>people.get(i);return {...draft,notes:Object.fromEntries(Object.entries(draft.stableNotes||{}).map(([id,note])=>[map(id),note]).filter(([id])=>id)),storeKey:stores.get(draft.stableStore)||'',employees:(draft.stableEmployees||[]).map(map).filter(Boolean),roles:{supervisor:map(draft.stableRoles?.supervisor)||'',rx:(draft.stableRoles?.rx||[]).map(map).filter(Boolean),training:(draft.stableRoles?.training||[]).map(map).filter(Boolean),earlyLate:(draft.stableRoles?.earlyLate||[]).map(map).filter(Boolean)},shrink:{...draft.shrink,employeeIds:(draft.stableShrink||[]).map(map).filter(Boolean)},date:draft.date<snapshot.cutoff?snapshot.cutoff:draft.date};}
 
 export function persistentDraft(plan,snapshot){const person=id=>snapshot.persons.find(p=>p.key===id)?.stableKey||'',store=snapshot.stores.find(s=>s.key===plan.storeKey);return {...plan,stableStore:store?.stableKey||'',stableEmployees:plan.employees.map(person),stableRoles:Object.fromEntries(Object.entries(plan.roles).map(([k,v])=>[k,Array.isArray(v)?v.map(person):person(v)])),stableNotes:Object.fromEntries(Object.entries(plan.notes||{}).map(([id,note])=>[person(id),note])),stableShrink:(plan.shrink?.employeeIds||[]).map(person)};}
 
