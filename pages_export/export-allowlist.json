@@ -48,7 +48,7 @@
     },
     {
       "path": "release.json",
-      "sha256": "b8239e8f3fbeea4e10218349342d30ea388d0d3eee3b2423c6ee92de8fcd9de7"
+      "sha256": "0c98e6931c28e0acd287f5a0b2913d8798bad30985c7d7be1622ebccb11e9d54"
     },
     {
       "path": "predictor.eb21d9a23fa1e3026097792832ef396e6d3ed12626296a711db6b53b6b78ed0b.js",
@@ -63,12 +63,12 @@
       "sha256": "3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8"
     },
     {
-      "path": "app.5cf650d5b2c28766ecd729976e85af286c53d37e18d8f9b3c2ea771d749db2bf.js",
-      "sha256": "5cf650d5b2c28766ecd729976e85af286c53d37e18d8f9b3c2ea771d749db2bf"
+      "path": "app.b0c71ae7b0637233a22b8a7d2c58fa176696ce4781fb3a269fd9dd290aae9148.js",
+      "sha256": "b0c71ae7b0637233a22b8a7d2c58fa176696ce4781fb3a269fd9dd290aae9148"
     },
     {
-      "path": "style.eb0ed45e8f0db9496bb275d63c0e8bb14cf9e16dd20f30098c450d2a75b83f06.css",
-      "sha256": "eb0ed45e8f0db9496bb275d63c0e8bb14cf9e16dd20f30098c450d2a75b83f06"
+      "path": "style.5b73578c4e3cb79fbed28d6140e715a8b4f4884684d28ac87dbcdd476a74ef99.css",
+      "sha256": "5b73578c4e3cb79fbed28d6140e715a8b4f4884684d28ac87dbcdd476a74ef99"
     },
     {
       "path": "planning.730ba5cf587ca054874e9d87636d1f9e8f740824c87098ec9e5db937aa7d4615.json.gz",
