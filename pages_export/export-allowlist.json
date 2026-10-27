@@ -48,7 +48,7 @@
     },
     {
       "path": "release.json",
-      "sha256": "93e5e65ff07f0e9b09dbd37ffde743db6d80c6e1a3e09dbcab71b9d077fc78fb"
+      "sha256": "5664917de6bddcfb9aa0617c91ecf7d9dfe34f3c1dc4fc963ad256bc8b760376"
     },
     {
       "path": "predictor.eb21d9a23fa1e3026097792832ef396e6d3ed12626296a711db6b53b6b78ed0b.js",
@@ -63,8 +63,8 @@
       "sha256": "3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8"
     },
     {
-      "path": "app.5ff50483ed943cd51b33e768fd0e86eb6906f0446eb365cd3dc7ec6b33779af6.js",
-      "sha256": "5ff50483ed943cd51b33e768fd0e86eb6906f0446eb365cd3dc7ec6b33779af6"
+      "path": "app.5dedea66d5497cd613e1bab4706fc36998e6ec2d3dd9ecbb899474aef2f8f6e1.js",
+      "sha256": "5dedea66d5497cd613e1bab4706fc36998e6ec2d3dd9ecbb899474aef2f8f6e1"
     },
     {
       "path": "style.5b73578c4e3cb79fbed28d6140e715a8b4f4884684d28ac87dbcdd476a74ef99.css",
