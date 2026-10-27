@@ -1,7 +1,7 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "57c442df85129aa6fd418017c5216b0a3d63b8f7f9785b360a3bb82908dcfd0b",
+  "version": "1c2d3332372dd7ea7e8c198cf4e14590c67069e52e227260bdf5e7cd3b113c36",
   "cutoff": "2026-10-23",
   "validThrough": "2026-10-29",
   "files": {
@@ -18,12 +18,12 @@
       "sha256": "3d24988ab471739e1e1818cdbeb5e60b3ac47fb1b0ac860c1bf9a8624cedceb8"
     },
     "app": {
-      "path": "app.1d7e2e219ba098ac23c852d15f25de6e4818f1f125f3f04f5d2a99ec6a987d3f.js",
-      "sha256": "1d7e2e219ba098ac23c852d15f25de6e4818f1f125f3f04f5d2a99ec6a987d3f"
+      "path": "app.daf4fa7a44b89718dc7a787a6a9072fb67488e75a6eefd299cc22e611e450625.js",
+      "sha256": "daf4fa7a44b89718dc7a787a6a9072fb67488e75a6eefd299cc22e611e450625"
     },
     "style": {
-      "path": "style.3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc.css",
-      "sha256": "3416e64697a2dced4adb3852b23d9abc12d03f6862e2b739ae7ee584d70185bc"
+      "path": "style.f16c4e67e7ed288ce3455efdc0fdd556dc6325aab775c1a82a4bfd0a4d427fb6.css",
+      "sha256": "f16c4e67e7ed288ce3455efdc0fdd556dc6325aab775c1a82a4bfd0a4d427fb6"
     },
     "planning": {
       "path": "planning.730ba5cf587ca054874e9d87636d1f9e8f740824c87098ec9e5db937aa7d4615.json.gz",
