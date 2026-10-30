@@ -1,9 +1,9 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "da1bebbf5bbad3e6c6d8a145bcde828aa21afa9e156bb40227608a8a600d4ca1",
-  "cutoff": "2026-10-23",
-  "validThrough": "2026-10-29",
+  "version": "8c0dcabcb04cb2db0f27a8ede5fd1e5a3acdc1357eb3eb2294388e756d2415f0",
+  "cutoff": "2026-10-30",
+  "validThrough": "2026-11-05",
   "files": {
     "predictor": {
       "path": "predictor.eb21d9a23fa1e3026097792832ef396e6d3ed12626296a711db6b53b6b78ed0b.js",
@@ -26,8 +26,8 @@
       "sha256": "5b73578c4e3cb79fbed28d6140e715a8b4f4884684d28ac87dbcdd476a74ef99"
     },
     "planning": {
-      "path": "planning.730ba5cf587ca054874e9d87636d1f9e8f740824c87098ec9e5db937aa7d4615.json.gz",
-      "sha256": "730ba5cf587ca054874e9d87636d1f9e8f740824c87098ec9e5db937aa7d4615"
+      "path": "planning.5b900b1114ccd051833cc2c24f40529d8565ba4b8e7fe111449897618101e0b8.json.gz",
+      "sha256": "5b900b1114ccd051833cc2c24f40529d8565ba4b8e7fe111449897618101e0b8"
     }
   },
   "shellSha256": "ce2f3f230b729796b63ea3d6f50abbfe6c14215876e0b0bdfb92ce91e50effc9",
