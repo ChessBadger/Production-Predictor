@@ -1,7 +1,7 @@
 {
   "schema": 3,
   "authPolicy": "existing-client-ui-gate-public-data",
-  "version": "92d8614d7fe470437d175fa4500c5b1d9e6fce092689433a4dda2557f68279be",
+  "version": "2a82ce3518518a8055ed3d5b593efec65e1dd0b5c24177bce1b44fd69af5a3e6",
   "cutoff": "2026-11-09",
   "validThrough": "2026-11-15",
   "files": {
@@ -26,8 +26,8 @@
       "sha256": "5b73578c4e3cb79fbed28d6140e715a8b4f4884684d28ac87dbcdd476a74ef99"
     },
     "planning": {
-      "path": "planning.b6ddf5009c49902081f8544d1f13d7f70ddae0ce1e6593cd0b28379cb84b3520.json.gz",
-      "sha256": "b6ddf5009c49902081f8544d1f13d7f70ddae0ce1e6593cd0b28379cb84b3520"
+      "path": "planning.9dfc18d455bca078a6ab18c941187ac044011060344307446e0da2a7c7f6b6b5.json.gz",
+      "sha256": "9dfc18d455bca078a6ab18c941187ac044011060344307446e0da2a7c7f6b6b5"
     }
   },
   "shellSha256": "ce2f3f230b729796b63ea3d6f50abbfe6c14215876e0b0bdfb92ce91e50effc9",
