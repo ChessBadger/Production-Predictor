@@ -10,8 +10,8 @@
     "schema": 2,
     "classification": "APPROVED PUBLIC DERIVED PLANNING DATA",
     "scope": "Current selectable roster; complete latest-visit historical crew display",
-    "employeeCount": 60,
-    "storeCount": 874,
+    "employeeCount": 61,
+    "storeCount": 856,
     "exposed": [
       "Current employee display names and opaque package keys",
       "Current employee speed, evidence, recent weekly hours and residual summaries",
@@ -48,7 +48,7 @@
     },
     {
       "path": "release.json",
-      "sha256": "0192ccd837bdc1423749d2d953ac5e99f7af53df634347184b292e6c9f9713ca"
+      "sha256": "4eba38c2a1af10a9c873b02de32122985c6709e70bcc79dfc707d8843490c1bf"
     },
     {
       "path": "predictor.eb21d9a23fa1e3026097792832ef396e6d3ed12626296a711db6b53b6b78ed0b.js",
@@ -71,8 +71,8 @@
       "sha256": "5b73578c4e3cb79fbed28d6140e715a8b4f4884684d28ac87dbcdd476a74ef99"
     },
     {
-      "path": "planning.5b900b1114ccd051833cc2c24f40529d8565ba4b8e7fe111449897618101e0b8.json.gz",
-      "sha256": "5b900b1114ccd051833cc2c24f40529d8565ba4b8e7fe111449897618101e0b8"
+      "path": "planning.b6ddf5009c49902081f8544d1f13d7f70ddae0ce1e6593cd0b28379cb84b3520.json.gz",
+      "sha256": "b6ddf5009c49902081f8544d1f13d7f70ddae0ce1e6593cd0b28379cb84b3520"
     },
     {
       "path": "export-allowlist.json",
