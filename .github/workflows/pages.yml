@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       pages: write
       id-token: write
     environment:
@@ -33,6 +34,27 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: pages_export
+      - name: Wait for uploaded Pages artifact to become visible
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import json, os, time, urllib.request
+          url = (os.environ['GITHUB_API_URL'] + '/repos/' + os.environ['GITHUB_REPOSITORY']
+                 + '/actions/runs/' + os.environ['GITHUB_RUN_ID'] + '/artifacts')
+          for attempt in range(12):
+              req = urllib.request.Request(url, headers={
+                  'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                  'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(req, timeout=15) as response:
+                  artifacts = json.load(response).get('artifacts', [])
+              if any(a['name'] == 'github-pages' and not a['expired'] for a in artifacts):
+                  print('Uploaded Pages artifact is available for deployment.')
+                  break
+              print('Waiting for GitHub to expose the uploaded artifact...', flush=True)
+              time.sleep(5)
+          else:
+              raise SystemExit('GitHub has not exposed the uploaded Pages artifact. Retry this workflow; imported data is safe.')
       - name: Deploy reviewed shared planner
         id: deployment
         uses: actions/deploy-pages@v4
